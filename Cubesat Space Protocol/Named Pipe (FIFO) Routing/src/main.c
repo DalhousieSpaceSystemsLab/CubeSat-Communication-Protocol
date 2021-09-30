@@ -18,35 +18,34 @@
 #include <csp/csp_interface.h>
 
 // Settings
-#define BUF_SIZE    250   // packet buffer size in bytes
-#define CLIENT_ADDR 1     // client address according to CSP internal network
-#define SERVER_ADDR 2     // server address according to CSP internal network
-#define CLIENT_TYPE 1     // client type of task
-#define SERVER_TYPE 2     // server type of task
-#define PORT        10    // port used for communications
+#define BUF_SIZE 250  // packet buffer size in bytes
+#define CLIENT_ADDR 1 // client address according to CSP internal network
+#define SERVER_ADDR 2 // server address according to CSP internal network
+#define CLIENT_TYPE 1 // client type of task
+#define SERVER_TYPE 2 // server type of task
+#define PORT 10       // port used for communications
 
 // Function to be used by the CSP library to route packets to the named pipe (FIFO)
-static int fifo_tx(csp_iface_t * ifc, csp_packet_t * packet, uint32_t timeout);
+static int fifo_tx(csp_iface_t *ifc, csp_packet_t *packet, uint32_t timeout);
 
 // Function to be used by the CSP library to route packets from the named pipe (FIFO)
 // into the CSP internal network
-static void * fifo_rx(void * parameters);
+static void *fifo_rx(void *parameters);
 
 // Define CSP named pipe interface
 static csp_iface_t csp_if_fifo = {
-  .name     =  "fifo",
-  .nexthop  =  fifo_tx,
-  .mtu      =  BUF_SIZE
-};
+    .name = "fifo",
+    .nexthop = fifo_tx,
+    .mtu = BUF_SIZE};
 
 // FIFO channel placeholders
 static int rx_channel, tx_channel;
 
 // Define FIFO transmission function
-static int fifo_tx(csp_iface_t * ifc, csp_packet_t * packet, uint32_t timeout)
+static int fifo_tx(csp_iface_t *ifc, csp_packet_t *packet, uint32_t timeout)
 {
   // Write packets to FIFO
-  if(write(tx_channel, &packet->length, packet->length + sizeof(uint32_t) + sizeof(uint16_t)) < 0) // write() failed
+  if (write(tx_channel, &packet->length, packet->length + sizeof(uint32_t) + sizeof(uint16_t)) < 0) // write() failed
     printf("[!] Failed to write frame.\n");
 
   // Free packet buffer
@@ -57,16 +56,16 @@ static int fifo_tx(csp_iface_t * ifc, csp_packet_t * packet, uint32_t timeout)
 }
 
 // Define FIFO receiving function
-static void * fifo_rx(void * parameters)
+static void *fifo_rx(void *parameters)
 {
   // Allocate buffer for incoming packet
-  csp_packet_t * packet = csp_buffer_get(BUF_SIZE);
+  csp_packet_t *packet = csp_buffer_get(BUF_SIZE);
 
   // Wait for incoming packet from FIFO
-  while(read(rx_channel, &packet->length, BUF_SIZE) > 0)
+  while (read(rx_channel, &packet->length, BUF_SIZE) > 0)
   {
     // Inject received packet into CSP internal network
-    csp_new_packet(packet, &csp_if_fifo, NULL);
+    csp_qfifo_write(packet, &csp_if_fifo, NULL);
     packet = csp_buffer_get(BUF_SIZE);
   }
 
@@ -74,35 +73,35 @@ static void * fifo_rx(void * parameters)
   return NULL;
 }
 
-int main(int argc, char * argv[])
+int main(int argc, char *argv[])
 {
   // Create placeholders
   int type = 0, address = 0, peer = 0;
-  char * tx_channel_name, * rx_channel_name;
+  char *tx_channel_name, *rx_channel_name;
 
   // Run as server or client
-  if(argc != 2)
+  if (argc != 2)
   {
     printf("[i] Usage: %s <server/client>\n", argv[0]);
     return -1;
   }
 
   // Setup according to server settings
-  if(strcmp(argv[1], "server") == 0)
+  if (strcmp(argv[1], "server") == 0)
   {
-    type    = SERVER_TYPE;
+    type = SERVER_TYPE;
     address = SERVER_ADDR;
-    peer    = CLIENT_ADDR;
+    peer = CLIENT_ADDR;
     tx_channel_name = "server_to_client";
     rx_channel_name = "client_to_server";
   }
 
   // Setup according to client settings
-  else if(strcmp(argv[1], "client") == 0)
+  else if (strcmp(argv[1], "client") == 0)
   {
-    type    = CLIENT_TYPE;
+    type = CLIENT_TYPE;
     address = CLIENT_ADDR;
-    peer    = SERVER_ADDR;
+    peer = SERVER_ADDR;
     tx_channel_name = "client_to_server";
     rx_channel_name = "server_to_client";
   }
@@ -113,27 +112,32 @@ int main(int argc, char * argv[])
     return -1;
   }
 
+  // Create CSP settings struct (set to default)
+  csp_conf_t conf;
+  csp_conf_get_defaults(&conf);
+  conf.address = address;
+
   //--- Init CSP and CSP buffer ---//
-  if(csp_init(address) != CSP_ERR_NONE) // csp_init() failed
+  if (csp_init(&conf) != CSP_ERR_NONE) // csp_init() failed
   {
     printf("[!] Failed to init CSP\n");
     return -1;
   }
 
-  if(csp_buffer_init(10, 300) != CSP_ERR_NONE) // csp_buffer_init() failed
-  {
-    printf("[!] Failed to init CSP buffer\n");
-    return -1;
-  }
+  // if (csp_buffer_init(10, 300) != CSP_ERR_NONE) // csp_buffer_init() failed
+  // {
+  //   printf("[!] Failed to init CSP buffer\n");
+  //   return -1;
+  // }
 
   //--- Open FIFO tx/rx channels ---//
-  if((tx_channel = open(tx_channel_name, O_RDWR)) < 0) // open() failed
+  if ((tx_channel = open(tx_channel_name, O_RDWR)) < 0) // open() failed
   {
     printf("[!] Failed to open TX channel\n");
     return -1;
   }
 
-  if((rx_channel = open(rx_channel_name, O_RDWR)) < 0) // open() failed
+  if ((rx_channel = open(rx_channel_name, O_RDWR)) < 0) // open() failed
   {
     printf("[!] Failed to open RX channel\n");
     return -1;
@@ -152,29 +156,29 @@ int main(int argc, char * argv[])
   csp_route_start_task(500, 1);
 
   //--- Listen for incoming connections ---//
-  csp_socket_t * socket;
-  if(type == SERVER_TYPE)
+  csp_socket_t *socket;
+  if (type == SERVER_TYPE)
   {
     socket = csp_socket(CSP_SO_NONE); // create socket
-    csp_bind(socket, PORT);             // bind port to socket
-    csp_listen(socket, 5);              // Listen for up to 5 incoming connections at once
+    csp_bind(socket, PORT);           // bind port to socket
+    csp_listen(socket, 5);            // Listen for up to 5 incoming connections at once
   }
 
   // Super loop
-  csp_conn_t * conn;
-  while(1)
+  csp_conn_t *conn;
+  while (1)
   {
-    if(type == SERVER_TYPE)
+    if (type == SERVER_TYPE)
     {
       // Process incoming connection
       conn = csp_accept(socket, 1000); // accept incoming connections with 1000ms timeout
-      if(conn)
+      if (conn)
       {
         // Parse packets incoming from connection with 10ms timeout between packets
-        csp_packet_t * packet;
-        while((packet = csp_read(conn, 10)) != NULL)
+        csp_packet_t *packet;
+        while ((packet = csp_read(conn, 10)) != NULL)
         {
-          if(packet)
+          if (packet)
           {
             // Prompt with incoming packet data
             printf("[i] Incoming packet: %s\n", packet->data);
@@ -190,9 +194,9 @@ int main(int argc, char * argv[])
     else // type = CLIENT_TYPE
     {
       // Allocate buffer for new packet
-      csp_packet_t * packet = csp_buffer_get(strlen("yoyoyo"));
+      csp_packet_t *packet = csp_buffer_get(strlen("yoyoyo"));
 
-      if(packet)
+      if (packet)
       {
         // Get message from user
         char msg[BUF_SIZE];
@@ -200,7 +204,7 @@ int main(int argc, char * argv[])
         fgets(msg, BUF_SIZE, stdin);
 
         // Copy string into packet data
-        strcpy((char *) packet->data, msg);
+        strcpy((char *)packet->data, msg);
 
         // Set packet length
         packet->length = strlen(msg);
