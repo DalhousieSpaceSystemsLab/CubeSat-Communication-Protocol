@@ -26,7 +26,7 @@
 #define PORT 10       // port used for communications
 
 // Function to be used by the CSP library to route packets to the named pipe (FIFO)
-static int fifo_tx(csp_iface_t *ifc, csp_packet_t *packet, uint32_t timeout);
+static int fifo_tx(const csp_route_t *ifroute, csp_packet_t *packet);
 
 // Function to be used by the CSP library to route packets from the named pipe (FIFO)
 // into the CSP internal network
@@ -42,7 +42,7 @@ static csp_iface_t csp_if_fifo = {
 static int rx_channel, tx_channel;
 
 // Define FIFO transmission function
-static int fifo_tx(csp_iface_t *ifc, csp_packet_t *packet, uint32_t timeout)
+static int fifo_tx(const csp_route_t *ifroute, csp_packet_t *packet)
 {
   // Write packets to FIFO
   if (write(tx_channel, &packet->length, packet->length + sizeof(uint32_t) + sizeof(uint16_t)) < 0) // write() failed
@@ -62,7 +62,7 @@ static void *fifo_rx(void *parameters)
   csp_packet_t *packet = csp_buffer_get(BUF_SIZE);
 
   // Wait for incoming packet from FIFO
-  while (read(rx_channel, &packet->length, BUF_SIZE) > 0)
+  while (read(rx_channel, (void *)&packet->length, BUF_SIZE) > 0)
   {
     // Inject received packet into CSP internal network
     csp_qfifo_write(packet, &csp_if_fifo, NULL);
@@ -115,7 +115,10 @@ int main(int argc, char *argv[])
   // Create CSP settings struct (set to default)
   csp_conf_t conf;
   csp_conf_get_defaults(&conf);
+
+  // Overwrite default settings
   conf.address = address;
+  conf.buffer_data_size = BUF_SIZE;
 
   //--- Init CSP and CSP buffer ---//
   if (csp_init(&conf) != CSP_ERR_NONE) // csp_init() failed
