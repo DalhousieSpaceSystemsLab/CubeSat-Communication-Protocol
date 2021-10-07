@@ -1,3 +1,0 @@
-[submodule "Cubesat Space Protocol/UART/src/libcsp"]
-	path = Cubesat Space Protocol/UART/src/libcsp
-	url = https://github.com/libcsp/libcsp
