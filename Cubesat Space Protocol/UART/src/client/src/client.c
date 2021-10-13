@@ -19,6 +19,7 @@
 #include <string.h>
 #include <termios.h>
 #include <pthread.h>
+#include <time.h>
 
 // Cubesat space protocol
 #include "csp/csp.h"
@@ -175,60 +176,70 @@ int main(int argc, char *argv[])
   // Main loop
   for (;;)
   {
-    // Get message from user
-    char msg[BUF_SIZE];
-    printf("[?] Enter a message to send to the server: ");
-    fgets(msg, BUF_SIZE, stdin);
-
-    // DEBUG
-    if (DEBUG)
-      printf("[i] Allocating buffer for packet...\n");
-
-    // Allocate buffer for new packet
-    csp_packet_t *packet = csp_buffer_get(strlen(msg));
-    if (!packet)
-    {
-      printf("[!] Failed to allocate packet buffer for message %s. SKIPPING.\n", msg);
-      continue;
-    }
-
-    // DEBUG
-    if (DEBUG)
-      printf("[i] Done.\n\n");
-
-    // Copy string into packet data
-    strcpy((char *)packet->data, msg);
-
-    // Set packet length
-    packet->length = strlen(msg);
-
-    // DEBUG
-    if (DEBUG)
-      printf("[i] Establishing connection to server...\n");
+    printf("[i] Establishing connection to server...\n");
 
     // Connect to server with 1000ms timeout
     csp_conn_t *conn = csp_connect(CSP_PRIO_NORM, SERVER_ADDR, PORT, CONN_TIMEOUT, CSP_O_NONE);
 
-    // DEBUG
-    if (DEBUG)
-      printf("[i] Done.\n\n");
-
-    printf("Sending: %s\r\n", msg);
-    if (!csp_send(conn, packet, 1000)) // csp_send() failed
+    if (conn)
     {
-      printf("[!] Failed to send packet to server\n");
-      return -1;
+      printf("[i] Connection established.\n\n");
     }
-    // DEBUG
-    if (DEBUG)
-      printf("[i] Done.\n\n");
+    else
+    {
+      printf(".");
+      struct timespec ts = {
+          .tv_sec = 0,
+          .tv_nsec = 500000000,
+      };
+      continue;
+    }
 
-    // Impose 1ms delay between each packet to give CSP time to free buffers
-    sleep(1);
+    for (;;)
+    {
+      // Get message from user
+      char msg[BUF_SIZE];
+      printf("[?] Enter a message to send to the server: ");
+      fgets(msg, BUF_SIZE, stdin);
 
-    // DEBUG
-    if (DEBUG)
-      printf("[i] Closing connection...\n");
+      // DEBUG
+      if (DEBUG)
+        printf("[i] Allocating buffer for packet...\n");
+
+      // Allocate buffer for new packet
+      csp_packet_t *packet = csp_buffer_get(strlen(msg));
+      if (!packet)
+      {
+        printf("[!] Failed to allocate packet buffer for message %s. SKIPPING.\n", msg);
+        continue;
+      }
+
+      // DEBUG
+      if (DEBUG)
+        printf("[i] Done.\n\n");
+
+      // Copy string into packet data
+      strcpy((char *)packet->data, msg);
+
+      // Set packet length
+      packet->length = strlen(msg);
+
+      // DEBUG
+      if (DEBUG)
+        printf("[i] Done.\n\n");
+
+      printf("Sending: %s\r\n", msg);
+      if (!csp_send(conn, packet, 1000)) // csp_send() failed
+      {
+        printf("[!] Failed to send packet to server\n");
+        break;
+      }
+      // DEBUG
+      if (DEBUG)
+        printf("[i] Done.\n\n");
+    }
+
+    printf("[i] Closing connection...\n");
 
     // Close connection
     csp_close(conn);
