@@ -36,7 +36,9 @@
 #define UART_SPEED B115200
 #define UART_PARITY 0
 
+// Program flags
 #define FIFO 0
+#define DEBUG 0
 
 // Glocal variables
 static int io;
@@ -83,6 +85,10 @@ int main(int argc, char *argv[])
   // Open I/O device
   if (!FIFO)
   {
+    // DEBUG
+    if (DEBUG)
+      printf("[i] Entering FIFO mode...\n");
+
     if ((io = open(argv[1], O_RDWR | O_NOCTTY | O_SYNC)) < 0)
     {
       printf("[!] Failed to open I/O device at %s\n", argv[1]);
@@ -123,9 +129,17 @@ int main(int argc, char *argv[])
       printf("error %d from tcsetattr", errno);
       return -1;
     }
+
+    // DEBUG
+    if (DEBUG)
+      printf("[i] Done.\n\n");
   }
   else
   {
+    // DEBUG
+    if (DEBUG)
+      printf("[i] Entering FIFO mode...\n");
+
     if ((fifo_i = open("fifo_i", O_RDWR)) < 0)
     {
       printf("[!] Failed to open fifo_i\n");
@@ -136,11 +150,23 @@ int main(int argc, char *argv[])
       printf("[!] Failed to open fifo_o\n");
       return -1;
     }
+
+    // DEBUG
+    if (DEBUG)
+      printf("[i] Done.\n\n");
   }
+
+  // DEBUG
+  if (DEBUG)
+    printf("[i] Starting to route incoming packets into CSP network...\n");
 
   // Start routing incoming packets into CSP network
   pthread_t rx_thread;
   pthread_create(&rx_thread, NULL, fifo_rx, NULL);
+
+  // DEBUG
+  if (DEBUG)
+    printf("[i] Done.\n\n");
 
   // Configure default CSP route
   csp_route_set(CSP_DEFAULT_ROUTE, &csp_io_dev, CSP_NODE_MAC);
@@ -154,6 +180,10 @@ int main(int argc, char *argv[])
     printf("[?] Enter a message to send to the server: ");
     fgets(msg, BUF_SIZE, stdin);
 
+    // DEBUG
+    if (DEBUG)
+      printf("[i] Allocating buffer for packet...\n");
+
     // Allocate buffer for new packet
     csp_packet_t *packet = csp_buffer_get(strlen(msg));
     if (!packet)
@@ -162,14 +192,26 @@ int main(int argc, char *argv[])
       continue;
     }
 
+    // DEBUG
+    if (DEBUG)
+      printf("[i] Done.\n\n");
+
     // Copy string into packet data
     strcpy((char *)packet->data, msg);
 
     // Set packet length
     packet->length = strlen(msg);
 
+    // DEBUG
+    if (DEBUG)
+      printf("[i] Establishing connection to server...\n");
+
     // Connect to server with 1000ms timeout
     csp_conn_t *conn = csp_connect(CSP_PRIO_NORM, SERVER_ADDR, PORT, CONN_TIMEOUT, CSP_O_NONE);
+
+    // DEBUG
+    if (DEBUG)
+      printf("[i] Done.\n\n");
 
     printf("Sending: %s\r\n", msg);
     if (!csp_send(conn, packet, 1000)) // csp_send() failed
@@ -177,11 +219,23 @@ int main(int argc, char *argv[])
       printf("[!] Failed to send packet to server\n");
       return -1;
     }
+    // DEBUG
+    if (DEBUG)
+      printf("[i] Done.\n\n");
+
     // Impose 1ms delay between each packet to give CSP time to free buffers
     sleep(1);
 
+    // DEBUG
+    if (DEBUG)
+      printf("[i] Closing connection...\n");
+
     // Close connection
     csp_close(conn);
+
+    // DEBUG
+    if (DEBUG)
+      printf("[i] Done.\n\n");
   }
 
   return 0;
