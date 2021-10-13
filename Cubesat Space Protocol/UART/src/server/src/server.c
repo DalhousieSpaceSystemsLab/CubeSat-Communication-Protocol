@@ -84,9 +84,6 @@ int main(int argc, char *argv[])
   // Open I/O device
   if (!FIFO)
   {
-    // DEBUG
-    printf("[i] Entering UART mode...\n");
-
     if ((io = open(argv[1], O_RDWR | O_NOCTTY | O_SYNC)) < 0)
     {
       printf("[!] Failed to open I/O device at %s\n", argv[1]);
@@ -127,15 +124,9 @@ int main(int argc, char *argv[])
       printf("error %d from tcsetattr", errno);
       return -1;
     }
-
-    // DEBUG
-    printf("[i] Done.\n\n");
   }
   else
   {
-    // DEBUG
-    printf("[i] Entering FIFO mode...\n");
-
     if ((fifo_i = open("fifo_o", O_RDWR)) < 0)
     {
       printf("[!] Failed to open fifo_i\n");
@@ -146,57 +137,24 @@ int main(int argc, char *argv[])
       printf("[!] Failed to open fifo_o\n");
       return -1;
     }
-
-    // DEBUG
-    printf("[i] Done.\n\n");
   }
-
-  // DEBUG
-  printf("[i] Starting to route incoming packets into CSP network...\n");
-
   // Start routing incoming packets into CSP network
   pthread_t rx_thread;
   pthread_create(&rx_thread, NULL, fifo_rx, NULL);
-
-  // DEBUG
-  printf("[i] Done.\n\n");
-
-  // DEBUG
-  printf("[i] Setting default CSP route\n");
-
   // Configure default CSP route
   csp_route_set(CSP_DEFAULT_ROUTE, &csp_if_fifo, CSP_NODE_MAC);
   csp_route_start_task(ROUTE_WORD_STACK, ROUTE_OS_PRIORITY);
-
-  // DEBUG
-  printf("[i] Done.\n\n");
-
-  // DEBUG
-  printf("[i] Configuring server socket...\n");
-
   // Listen for incoming connections
   csp_socket_t *socket = csp_socket(CSP_SO_NONE);
   csp_bind(socket, PORT);
   csp_listen(socket, MAX_PEND_CONN);
-
-  // DEBUG
-  printf("[i] Done.\n\n");
-
   // Main loop
   for (;;)
   {
-    // DEBUG
-    printf("[i] Listening for incoming connections...\n");
-
     // Proces incoming connection
     csp_conn_t *conn;
     if ((conn = csp_accept(socket, CONN_TIMEOUT)))
     {
-      // DEBUG
-      printf("[i] Done.\n\n");
-      // DEBUG
-      printf("[i] Connection established. Parsing incoming packets...\n");
-
       // Process incoming packets
       csp_packet_t *packet;
       while ((packet = csp_read(conn, PACKET_TIMEOUT)) != NULL)
@@ -206,19 +164,10 @@ int main(int argc, char *argv[])
 
       // Free packet buffer
       csp_buffer_free(packet);
-
-      // DEBUG
-      printf("[i] Done.\n\n");
     }
-
-    // DEBUG
-    printf("[i] Closing connection...\n");
 
     // Close connection
     csp_close(conn);
-
-    // DEBUG
-    printf("[i] Done.\n\n");
   }
 
   return 0;
