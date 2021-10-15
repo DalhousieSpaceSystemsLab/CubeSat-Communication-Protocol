@@ -221,39 +221,43 @@ int main(int argc, char *argv[])
       if (DEBUG)
         printf("[i] Allocating buffer for packet...\n");
 
-      // Allocate buffer for new packet
-      csp_packet_t *packet = csp_buffer_get(strlen(msg));
-      if (!packet)
+      for (int x = 0; x < strlen(msg); x += CSP_PACKET_SIZE)
       {
-        printf("[!] Failed to allocate packet buffer for message %s. SKIPPING.\n", msg);
-        continue;
+        // Allocate buffer for new packet
+        csp_packet_t *packet = csp_buffer_get(strlen(msg));
+        if (!packet)
+        {
+          printf("[!] Failed to allocate packet buffer for message %s. SKIPPING.\n", msg);
+          continue;
+        }
+
+        // DEBUG
+        if (DEBUG)
+          printf("[i] Done.\n\n");
+
+        // Copy string into packet data
+        strncpy((char *)packet->data, &msg[x], CSP_PACKET_SIZE);
+
+        // Set packet length
+        packet->length = strlen(msg);
+
+        // DEBUG
+        if (DEBUG)
+          printf("[i] Done.\n\n");
+
+        if (DEBUG)
+          printf("Sending: %s\r\n", msg);
+
+        if (!csp_send(conn, packet, 1000)) // csp_send() failed
+        {
+          printf("[!] Failed to send packet to server\n");
+          break;
+        }
+
+        // DEBUG
+        if (DEBUG)
+          printf("[i] Done.\n\n");
       }
-
-      // DEBUG
-      if (DEBUG)
-        printf("[i] Done.\n\n");
-
-      // Copy string into packet data
-      strcpy((char *)packet->data, msg);
-
-      // Set packet length
-      packet->length = strlen(msg);
-
-      // DEBUG
-      if (DEBUG)
-        printf("[i] Done.\n\n");
-
-      if (DEBUG)
-        printf("Sending: %s\r\n", msg);
-
-      if (!csp_send(conn, packet, 1000)) // csp_send() failed
-      {
-        printf("[!] Failed to send packet to server\n");
-        break;
-      }
-      // DEBUG
-      if (DEBUG)
-        printf("[i] Done.\n\n");
     }
 
     printf("[i] Closing connection...\n");
@@ -316,7 +320,7 @@ static void *fifo_rx(void *parameters)
   // Wait for incoming packet from input device
   if (!FIFO)
   {
-    while (read(io, (void *)&packet->length, BUF_SIZE) >= 0)
+    while (read(io, (void *)&packet->length, CSP_PACKET_SIZE) >= 0)
     {
       // Inject received packet into CSP network
       csp_qfifo_write(packet, &csp_io_dev, NULL);
@@ -325,7 +329,7 @@ static void *fifo_rx(void *parameters)
   }
   else
   {
-    while (read(fifo_i, (void *)&packet->length, BUF_SIZE) >= 0)
+    while (read(fifo_i, (void *)&packet->length, CSP_PACKET_SIZE) >= 0)
     {
       // Inject received packet into CSP network
       csp_qfifo_write(packet, &csp_io_dev, NULL);

@@ -289,7 +289,7 @@ static void *fifo_rx(void *parameters)
   // Wait for incoming packet from input device
   if (!FIFO)
   {
-    while (read(io, (void *)&packet->length, BUF_SIZE) >= 0)
+    while (read(io, (void *)&packet->length, CSP_PACKET_SIZE) >= 0)
     {
       // Inject received packet into CSP network
       csp_qfifo_write(packet, &csp_if_fifo, NULL);
@@ -298,7 +298,7 @@ static void *fifo_rx(void *parameters)
   }
   else
   {
-    while (read(fifo_i, (void *)&packet->length, BUF_SIZE) >= 0)
+    while (read(fifo_i, (void *)&packet->length, CSP_PACKET_SIZE) >= 0)
     {
       // Inject received packet into CSP network
       csp_qfifo_write(packet, &csp_if_fifo, NULL);
