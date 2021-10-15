@@ -20,6 +20,7 @@
 #include <termios.h>
 #include <pthread.h>
 #include <time.h>
+#include <stdbool.h>
 
 // Cubesat space protocol
 #include "csp/csp.h"
@@ -38,12 +39,12 @@
 #define UART_PARITY 0
 
 // Program flags
-#define FIFO 1
-#define DEBUG 0
+#define DEBUG 1
 
 // Glocal variables
 static int io;
 static int fifo_i, fifo_o;
+static bool FIFO = false;
 
 // Function to be used by the CSP library to route packets to the named pipe (FIFO)
 static int fifo_tx(const csp_route_t *ifroute, csp_packet_t *packet);
@@ -62,10 +63,15 @@ static csp_iface_t csp_io_dev = {
 int main(int argc, char *argv[])
 {
   // Check argc
-  if (argc != 2)
+  if (argc != 2 && argc != 1)
   {
     printf("[!] Invalid number of arguments. Try specifying I/O device path (e.g.: /dev/uart0)\n");
     return -1;
+  }
+
+  if (argc == 1)
+  {
+    FIFO = true;
   }
 
   // Create CSP settings struct
