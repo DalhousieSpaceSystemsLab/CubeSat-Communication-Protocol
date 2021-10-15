@@ -38,7 +38,7 @@
 #define UART_PARITY 0
 
 // Program flags
-#define FIFO 0
+#define FIFO 1
 #define DEBUG 0
 
 // Glocal variables
