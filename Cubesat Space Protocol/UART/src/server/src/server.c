@@ -254,6 +254,9 @@ static int fifo_tx(const csp_route_t *ifroute, csp_packet_t *packet)
     {
       printf("[!] Failed to write data packet to output device. SKIPPING.\n");
     }
+
+    // TEST : add newline character
+    write(io, '\n', 1);
   }
   else
   {
