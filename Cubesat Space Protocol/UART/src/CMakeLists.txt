@@ -202,6 +202,7 @@ add_subdirectory(libcsp)
 # executable targets after, and link against necessary dependencies
 add_subdirectory(server)
 add_subdirectory(client) 
+add_subdirectory(uart_debug)
 
 # TARGET_COMPILE_OPTIONS(${BIN_TEST}
 #   BEFORE PUBLIC "-g"

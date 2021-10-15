@@ -34,7 +34,7 @@
 #define ROUTE_WORD_STACK 500
 #define ROUTE_OS_PRIORITY 1
 
-#define UART_SPEED B115200
+#define UART_SPEED B9600
 #define UART_PARITY 0
 
 // Program flags
@@ -116,7 +116,8 @@ int main(int argc, char *argv[])
     tty.c_cc[VMIN] = 0;     // read doesn't block
     tty.c_cc[VTIME] = 5;    // 0.5 seconds read timeout
 
-    tty.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
+    // tty.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
+    tty.c_iflag |= (IXON);
 
     tty.c_cflag |= (CLOCAL | CREAD);   // ignore modem controls,
                                        // enable reading

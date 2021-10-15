@@ -19,6 +19,7 @@
 #include <string.h>
 #include <termios.h>
 #include <pthread.h>
+#include <stdbool.h>
 
 // Cubesat space protocol
 #include "csp/csp.h"
@@ -34,16 +35,16 @@
 #define ROUTE_WORD_STACK 500
 #define ROUTE_OS_PRIORITY 1
 
-#define UART_SPEED B115200
+#define UART_SPEED B9600
 #define UART_PARITY 0
 
 // Program flags
-#define FIFO 1
 #define DEBUG 0
 
 // Glocal variables
 static int io;
 static int fifo_i, fifo_o;
+static bool FIFO = false;
 
 // Function to be used by the CSP library to route packets to the named pipe (FIFO)
 static int fifo_tx(const csp_route_t *ifroute, csp_packet_t *packet);
@@ -62,10 +63,16 @@ static csp_iface_t csp_if_fifo = {
 int main(int argc, char *argv[])
 {
   // Check argc
-  if (argc != 2)
+  if (argc != 2 && argc != 1)
   {
     printf("[!] Invalid number of arguments. Try specifying I/O device path (e.g.: /dev/uart0)\n");
     return -1;
+  }
+
+  // Enter FIFO mode if no device path specified
+  if (argc == 1)
+  {
+    FIFO = true;
   }
 
   // Create CSP settings struct
@@ -116,7 +123,8 @@ int main(int argc, char *argv[])
     tty.c_cc[VMIN] = 0;     // read doesn't block
     tty.c_cc[VTIME] = 5;    // 0.5 seconds read timeout
 
-    tty.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
+    // tty.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
+    tty.c_iflag |= (IXON);
 
     tty.c_cflag |= (CLOCAL | CREAD);   // ignore modem controls,
                                        // enable reading
