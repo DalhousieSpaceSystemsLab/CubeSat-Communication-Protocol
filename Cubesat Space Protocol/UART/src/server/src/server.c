@@ -31,7 +31,8 @@
 #define MAX_PEND_CONN 5
 #define CONN_TIMEOUT 1000 // in ms
 #define PACKET_TIMEOUT 10 // in ms
-#define BUF_SIZE 250
+#define BUF_SIZE 10000
+#define CSP_PACKET_SIZE 256
 #define ROUTE_WORD_STACK 500
 #define ROUTE_OS_PRIORITY 1
 
@@ -57,7 +58,7 @@ static void *fifo_rx(void *parameters);
 static csp_iface_t csp_if_fifo = {
     .name = "fifo",
     .nexthop = fifo_tx,
-    .mtu = BUF_SIZE,
+    .mtu = CSP_PACKET_SIZE,
 };
 
 int main(int argc, char *argv[])
@@ -81,7 +82,7 @@ int main(int argc, char *argv[])
 
   // Overwrite default settings
   conf.address = SERVER_ADDR;
-  conf.buffer_data_size = BUF_SIZE;
+  conf.buffer_data_size = CSP_PACKET_SIZE;
 
   // Init CSP
   if (csp_init(&conf) != CSP_ERR_NONE)
@@ -218,7 +219,7 @@ int main(int argc, char *argv[])
       csp_packet_t *packet;
       while ((packet = csp_read(conn, PACKET_TIMEOUT)) != NULL)
       {
-        printf("[i] Incoming packet: %s\n", packet->data);
+        printf("%s", packet->data);
       }
 
       // Free packet buffer
@@ -228,6 +229,8 @@ int main(int argc, char *argv[])
       if (DEBUG)
         printf("[i] Done.\n\n");
     }
+
+    printf("\n\n");
 
     // DEBUG
     if (DEBUG)
@@ -278,7 +281,7 @@ static int fifo_tx(const csp_route_t *ifroute, csp_packet_t *packet)
 static void *fifo_rx(void *parameters)
 {
   // Allocate buffer for incoming packet
-  csp_packet_t *packet = csp_buffer_get(BUF_SIZE);
+  csp_packet_t *packet = csp_buffer_get(CSP_PACKET_SIZE);
   if (!packet)
   {
     printf("[!] Failed to allocate packet buffer for incoming data from input device. SKIPPING.\n");
@@ -292,7 +295,7 @@ static void *fifo_rx(void *parameters)
     {
       // Inject received packet into CSP network
       csp_qfifo_write(packet, &csp_if_fifo, NULL);
-      packet = csp_buffer_get(BUF_SIZE);
+      packet = csp_buffer_get(CSP_PACKET_SIZE);
     }
   }
   else
@@ -301,7 +304,7 @@ static void *fifo_rx(void *parameters)
     {
       // Inject received packet into CSP network
       csp_qfifo_write(packet, &csp_if_fifo, NULL);
-      packet = csp_buffer_get(BUF_SIZE);
+      packet = csp_buffer_get(CSP_PACKET_SIZE);
     }
   }
 

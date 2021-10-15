@@ -30,7 +30,8 @@
 #define SERVER_ADDR 1
 #define CLIENT_ADDR 2
 #define PORT 10
-#define BUF_SIZE 250
+#define BUF_SIZE 10000
+#define CSP_PACKET_SIZE 256
 #define CONN_TIMEOUT 1000 // in ms
 #define ROUTE_WORD_STACK 500
 #define ROUTE_OS_PRIORITY 1
@@ -39,7 +40,7 @@
 #define UART_PARITY 0
 
 // Program flags
-#define DEBUG 1
+#define DEBUG 0
 
 // Glocal variables
 static int io;
@@ -57,8 +58,11 @@ static void *fifo_rx(void *parameters);
 static csp_iface_t csp_io_dev = {
     .name = "fifo",
     .nexthop = fifo_tx,
-    .mtu = BUF_SIZE,
+    .mtu = CSP_PACKET_SIZE,
 };
+
+// Thread which listens for incoming messages on the CSP network and prints them to screen
+static void *listen(void *parameters);
 
 int main(int argc, char *argv[])
 {
@@ -80,7 +84,7 @@ int main(int argc, char *argv[])
 
   // Overwrite default settings
   conf.address = CLIENT_ADDR;
-  conf.buffer_data_size = BUF_SIZE;
+  conf.buffer_data_size = CSP_PACKET_SIZE;
 
   // Init CSP
   if (csp_init(&conf) != CSP_ERR_NONE)
@@ -202,6 +206,10 @@ int main(int argc, char *argv[])
       continue;
     }
 
+    // Start listening thread
+    // pthread_t thread_listen;
+    // pthread_create(&thread_listen, NULL, listen, (void *)conn);
+
     for (;;)
     {
       // Get message from user
@@ -235,7 +243,9 @@ int main(int argc, char *argv[])
       if (DEBUG)
         printf("[i] Done.\n\n");
 
-      printf("Sending: %s\r\n", msg);
+      if (DEBUG)
+        printf("Sending: %s\r\n", msg);
+
       if (!csp_send(conn, packet, 1000)) // csp_send() failed
       {
         printf("[!] Failed to send packet to server\n");
@@ -247,6 +257,9 @@ int main(int argc, char *argv[])
     }
 
     printf("[i] Closing connection...\n");
+
+    // Stop listen thread
+    // pthread_cancel(thread_listen);
 
     // Close connection
     csp_close(conn);
@@ -293,7 +306,7 @@ static int fifo_tx(const csp_route_t *ifroute, csp_packet_t *packet)
 static void *fifo_rx(void *parameters)
 {
   // Allocate buffer for incoming packet
-  csp_packet_t *packet = csp_buffer_get(BUF_SIZE);
+  csp_packet_t *packet = csp_buffer_get(CSP_PACKET_SIZE);
   if (!packet)
   {
     printf("[!] Failed to allocate packet buffer for incoming data from input device. SKIPPING.\n");
@@ -307,7 +320,7 @@ static void *fifo_rx(void *parameters)
     {
       // Inject received packet into CSP network
       csp_qfifo_write(packet, &csp_io_dev, NULL);
-      packet = csp_buffer_get(BUF_SIZE);
+      packet = csp_buffer_get(CSP_PACKET_SIZE);
     }
   }
   else
@@ -316,10 +329,28 @@ static void *fifo_rx(void *parameters)
     {
       // Inject received packet into CSP network
       csp_qfifo_write(packet, &csp_io_dev, NULL);
-      packet = csp_buffer_get(BUF_SIZE);
+      packet = csp_buffer_get(CSP_PACKET_SIZE);
     }
   }
 
   // done
   return NULL;
+}
+
+static void *listen(void *parameters)
+{
+  csp_conn_t *conn = (csp_conn_t *)parameters;
+
+  for (;;)
+  {
+    csp_packet_t *packet = csp_read(conn, CONN_TIMEOUT);
+
+    if (packet->length > 0)
+    {
+      // Print message
+      printf("\rserver >> %.*s\n", packet->length, packet->data);
+    }
+
+    csp_buffer_free(packet);
+  }
 }

@@ -34,14 +34,13 @@
 #define MAX_PEND_CONN 5
 #define CONN_TIMEOUT 1000 // in ms
 #define PACKET_TIMEOUT 10 // in ms
-#define BUF_SIZE 250
 #define ROUTE_WORD_STACK 500
 #define ROUTE_OS_PRIORITY 1
 
 #define UART_SPEED B9600
 #define UART_PARITY 0
 
-#define BUF_SIZE 256
+#define BUF_SIZE 10000
 
 // Program flags
 #define DEBUG 0
