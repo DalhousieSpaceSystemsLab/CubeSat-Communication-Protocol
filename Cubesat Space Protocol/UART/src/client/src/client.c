@@ -284,7 +284,7 @@ static int fifo_tx(const csp_route_t *ifroute, csp_packet_t *packet)
     }
 
     // TEST : add newline character
-    // write(io, "\n", 1);
+    write(io, "\n", 1);
   }
   else
   {
