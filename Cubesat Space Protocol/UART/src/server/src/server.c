@@ -220,10 +220,10 @@ int main(int argc, char *argv[])
       while ((packet = csp_read(conn, PACKET_TIMEOUT)) != NULL)
       {
         printf("%s", packet->data);
-      }
 
-      // Free packet buffer
-      csp_buffer_free(packet);
+        // Free packet buffer
+        csp_buffer_free(packet);
+      }
 
       // DEBUG
       if (DEBUG)
