@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
 
   // Overwrite default settings
   conf.address = SERVER_ADDR;
-  conf.buffer_data_size = CSP_PACKET_SIZE;
+  conf.buffer_data_size = BUF_SIZE;
 
   // Init CSP
   if (csp_init(&conf) != CSP_ERR_NONE)
@@ -229,8 +229,6 @@ int main(int argc, char *argv[])
       if (DEBUG)
         printf("[i] Done.\n\n");
     }
-
-    printf("\n\n");
 
     // DEBUG
     if (DEBUG)

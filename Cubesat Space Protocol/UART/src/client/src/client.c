@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 
   // Overwrite default settings
   conf.address = CLIENT_ADDR;
-  conf.buffer_data_size = CSP_PACKET_SIZE;
+  conf.buffer_data_size = BUF_SIZE;
 
   // Init CSP
   if (csp_init(&conf) != CSP_ERR_NONE)
