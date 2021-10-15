@@ -221,43 +221,39 @@ int main(int argc, char *argv[])
       if (DEBUG)
         printf("[i] Allocating buffer for packet...\n");
 
-      for (int x = 0; x < strlen(msg); x += CSP_PACKET_SIZE)
+      // Allocate buffer for new packet
+      csp_packet_t *packet = csp_buffer_get(strlen(msg));
+      if (!packet)
       {
-        // Allocate buffer for new packet
-        csp_packet_t *packet = csp_buffer_get(CSP_PACKET_SIZE);
-        if (!packet)
-        {
-          printf("[!] Failed to allocate packet buffer for message %s. SKIPPING.\n", msg);
-          continue;
-        }
-
-        // DEBUG
-        if (DEBUG)
-          printf("[i] Done.\n\n");
-
-        // Copy string into packet data
-        strncpy((char *)packet->data, &msg[x], CSP_PACKET_SIZE);
-
-        // Set packet length
-        packet->length = strlen(msg);
-
-        // DEBUG
-        if (DEBUG)
-          printf("[i] Done.\n\n");
-
-        if (DEBUG)
-          printf("Sending: %s\r\n", msg);
-
-        if (!csp_send(conn, packet, 1000)) // csp_send() failed
-        {
-          printf("[!] Failed to send packet to server\n");
-          break;
-        }
-
-        // DEBUG
-        if (DEBUG)
-          printf("[i] Done.\n\n");
+        printf("[!] Failed to allocate packet buffer for message %s. SKIPPING.\n", msg);
+        continue;
       }
+
+      // DEBUG
+      if (DEBUG)
+        printf("[i] Done.\n\n");
+
+      // Copy string into packet data
+      strcpy((char *)packet->data, msg);
+
+      // Set packet length
+      packet->length = strlen(msg);
+
+      // DEBUG
+      if (DEBUG)
+        printf("[i] Done.\n\n");
+
+      if (DEBUG)
+        printf("Sending: %s\r\n", msg);
+
+      if (!csp_send(conn, packet, 1000)) // csp_send() failed
+      {
+        printf("[!] Failed to send packet to server\n");
+        break;
+      }
+      // DEBUG
+      if (DEBUG)
+        printf("[i] Done.\n\n");
     }
 
     printf("[i] Closing connection...\n");
@@ -288,7 +284,7 @@ static int fifo_tx(const csp_route_t *ifroute, csp_packet_t *packet)
     }
 
     // TEST : add newline character
-    write(io, "\n", 1);
+    // write(io, "\n", 1);
   }
   else
   {
