@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
       for (int x = 0; x < strlen(msg); x += CSP_PACKET_SIZE)
       {
         // Allocate buffer for new packet
-        csp_packet_t *packet = csp_buffer_get(strlen(msg));
+        csp_packet_t *packet = csp_buffer_get(CSP_PACKET_SIZE);
         if (!packet)
         {
           printf("[!] Failed to allocate packet buffer for message %s. SKIPPING.\n", msg);
@@ -286,9 +286,6 @@ static int fifo_tx(const csp_route_t *ifroute, csp_packet_t *packet)
     {
       printf("[!] Failed to write data packet to output device. SKIPPING.\n");
     }
-
-    // TEST : add newline character
-    write(io, "\n", 1);
   }
   else
   {
