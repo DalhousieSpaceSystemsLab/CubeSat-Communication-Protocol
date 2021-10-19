@@ -19,7 +19,7 @@
 #define MAX_PEND_CONN 5
 #define CONN_TIMEOUT 1000 // in ms
 #define PACKET_TIMEOUT 10 // in ms
-#define BUF_SIZE 10000
+#define BUF_SIZE 256
 #define CSP_PACKET_SIZE 16
 #define ROUTE_WORD_STACK 500
 #define ROUTE_OS_PRIORITY 1
