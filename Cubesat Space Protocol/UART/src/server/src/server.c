@@ -9,6 +9,9 @@
  * 
  */
 
+// Project headers
+#include "settings.h"
+
 // Standard C libraries
 #include <stdio.h>
 #include <sys/stat.h>
@@ -24,20 +27,6 @@
 // Cubesat space protocol
 #include "csp/csp.h"
 #include "csp/csp_interface.h"
-
-// Settings
-#define SERVER_ADDR 1
-#define PORT 10
-#define MAX_PEND_CONN 5
-#define CONN_TIMEOUT 1000 // in ms
-#define PACKET_TIMEOUT 10 // in ms
-#define BUF_SIZE 10000
-#define CSP_PACKET_SIZE 256
-#define ROUTE_WORD_STACK 500
-#define ROUTE_OS_PRIORITY 1
-
-#define UART_SPEED B9600
-#define UART_PARITY 0
 
 // Program flags
 #define DEBUG 0

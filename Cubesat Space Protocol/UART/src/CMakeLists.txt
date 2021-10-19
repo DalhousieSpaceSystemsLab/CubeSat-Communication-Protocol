@@ -196,6 +196,9 @@ function(add_library lib)
 endfunction(add_library lib)
 endif(NOT COMMAND _add_library)
 
+# auxiliary headers
+include_directories(settings)
+
 # dependencies come first
 add_subdirectory(libcsp)
 
