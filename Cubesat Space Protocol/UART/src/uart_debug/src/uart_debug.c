@@ -9,6 +9,8 @@
  * 
  */
 
+#define _BSD_SOURCE
+
 // Standard C libraries
 #include <stdio.h>
 #include <sys/stat.h>
