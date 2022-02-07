@@ -1,0 +1,3 @@
+[submodule "Loris Communication Protocol/libcorrect"]
+	path = Loris Communication Protocol/libcorrect
+	url = https://github.com/quiet/libcorrect
