@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
     char data[MAX_READ_LEN];
     int data_len = -1;
     printf("[?] Read or write (r/w): ");
-    scanf("%c", &choice);
+    scanf(" %c", &choice);
 
     switch(choice) {
       case 'r':
@@ -38,28 +38,29 @@ int main(int argc, char *argv[]) {
         break;
       case 'R':
         printf("[?] Read until (u) or UPTO (U): ");
-        scanf("%c", &choice);
+        scanf(" %c", &choice);
         printf("[?] How many: ");
         scanf("%d", &choice_len);
-        break;
-      case 'u':
-        printf("[i] Reading UNTIL %d bytes...\n", choice_len);
-        if((data_len = antenna_read(data, choice_len, READ_MODE_UNTIL)) < 0) {
-          printf("[!] failed to antenna read until %d bytes\n", choice_len);
-          return -1;
-        }
-        break;
-      case 'U':
-        printf("[i] Reading UPTO %d bytes...\n", choice_len);
-        if((data_len = antenna_read(data, choice_len, READ_MODE_UPTO)) < 0) {
-          printf("[!] failed to antenna read upto %d bytes\n", choice_len);
-          return -1;
+        
+        if(choice == 'u') {
+          printf("[i] Reading UNTIL %d bytes...\n", choice_len);
+          if((data_len = antenna_read(data, choice_len, READ_MODE_UNTIL)) < 0) {
+            printf("[!] failed to antenna read until %d bytes\n", choice_len);
+            return -1;
+          }
+        } else {
+          printf("[i] Reading UPTO %d bytes...\n", choice_len);
+          if((data_len = antenna_read(data, choice_len, READ_MODE_UPTO)) < 0) {
+            printf("[!] failed to antenna read upto %d bytes\n", choice_len);
+            return -1;
+          }
+
         }
         break;
       case 'w':
       case 'W':
         printf("[?] Enter message to send: ");
-        fgets(data, MAX_READ_LEN, stdin);
+        scanf(" %s", data);
         data_len = strlen(data);
         if(antenna_write(data, data_len) < 0) {
           printf("[!] failed to antenna write \"%s\" containing %d bytes\n", data, data_len);
@@ -72,10 +73,10 @@ int main(int argc, char *argv[]) {
     }
 
     // Print results
-    printf("[i] Bytes read = %d\n", data_len);
+    printf("[i] Data size = %d\n", data_len);
     printf("-- DATA DUMP --\n");
     for(int x = 0; x < data_len; x++) {
-      printf("%.2x ", data[x]);
+      printf("%.2x=\'%c\' ", data[x], data[x]);
     }    
     printf("\n-- END DUMP --\n");
   }

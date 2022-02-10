@@ -10,6 +10,8 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <stdio.h>
+#include <string.h>
 
 // Settings
 #define UART_SPEED B9600

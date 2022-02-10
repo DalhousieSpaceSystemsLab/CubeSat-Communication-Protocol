@@ -123,6 +123,9 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
     return -1;
   }
 
+  // Copy internal buffer out
+  memcpy(buffer, buffer_in, bytes_read);
+
   // done
   return bytes_read;
 }
