@@ -69,46 +69,7 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  /**
-   * OLD UART serial port setup
-   * 
-   */
-  // struct termios tty;
-  // if (tcgetattr(io, &tty) != 0)
-  // {
-  //   printf("error %d from tcgetattr", errno);
-  //   return -1;
-  // }
-
-  // cfsetospeed(&tty, UART_SPEED);
-  // cfsetispeed(&tty, UART_SPEED);
-
-  // tty.c_cflag = (tty.c_cflag & ~CSIZE) | CS8; // 8-bit chars
-  // // disable IGNBRK for mismatched speed tests; otherwise receive break
-  // // as \000 chars
-  // tty.c_iflag &= ~IGNBRK; // disable break processing
-  // tty.c_lflag = 0;        // no signaling chars, no echo,
-  //                         // no canonical processing
-  // tty.c_oflag = 0;        // no remapping, no delays
-  // tty.c_cc[VMIN] = 0;     // read doesn't block
-  // tty.c_cc[VTIME] = 5;    // 0.5 seconds read timeout
-
-  // // tty.c_iflag &= ~(IXON | IXOFF | IXANY); // shut off xon/xoff ctrl
-  // tty.c_iflag |= (IXON);
-
-  // tty.c_cflag |= (CLOCAL | CREAD);   // ignore modem controls,
-  //                                    // enable reading
-  // tty.c_cflag &= ~(PARENB | PARODD); // shut off parity
-  // tty.c_cflag |= UART_PARITY;
-  // tty.c_cflag &= ~CSTOPB;
-  // // tty.c_cflag &= ~CRTSCTS;
-
-  // if (tcsetattr(io, TCSANOW, &tty) != 0)
-  // {
-  //   printf("error %d from tcsetattr", errno);
-  //   return -1;
-  // }
-
+  // UART device setup //
   struct termios tty;
 
   if (tcgetattr(io, &tty) < 0)
