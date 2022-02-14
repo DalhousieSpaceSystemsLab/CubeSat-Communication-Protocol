@@ -22,10 +22,11 @@ int main(int argc, char *argv[]) {
   int done = 0;
   while(!done) {
     char choice;
+    char encoded;
     int choice_len = 0;
     char data[MAX_READ_LEN];
     int data_len = -1;
-    printf("[?] Read or write (r/w): ");
+    printf("[?] Read or write (r/w) or encoded (R/W): ");
     scanf(" %c", &choice);
 
     switch(choice) {
@@ -37,32 +38,57 @@ int main(int argc, char *argv[]) {
         }
         break;
       case 'R':
+        printf("[?] Will this be encoded (y/n): ");
+        scanf(" %c", &encoded);
         printf("[?] Read until (u) or UPTO (U): ");
         scanf(" %c", &choice);
         printf("[?] How many: ");
         scanf("%d", &choice_len);
         
         if(choice == 'u') {
-          printf("[i] Reading UNTIL %d bytes...\n", choice_len);
-          if((data_len = antenna_read(data, choice_len, READ_MODE_UNTIL)) < 0) {
-            printf("[!] failed to antenna read until %d bytes\n", choice_len);
-            return -1;
+          if(encoded == 'y') {
+            printf("[i] Reading UNTIL %d bytes ENCODED...\n", choice_len);
+            if((data_len = antenna_read_rs(data, choice_len, READ_MODE_UNTIL)) < 0) {
+              printf("[!] failed to antenna read until %d bytes\n", choice_len);
+              return -1;
+            }
+          } else {
+            printf("[i] Reading UNTIL %d bytes...\n", choice_len);
+            if((data_len = antenna_read(data, choice_len, READ_MODE_UNTIL)) < 0) {
+              printf("[!] failed to antenna read until %d bytes\n", choice_len);
+              return -1;
+            }
           }
         } else {
-          printf("[i] Reading UPTO %d bytes...\n", choice_len);
-          if((data_len = antenna_read(data, choice_len, READ_MODE_UPTO)) < 0) {
-            printf("[!] failed to antenna read upto %d bytes\n", choice_len);
-            return -1;
+          if(encoded == 'y') {
+            printf("[i] Reading UPTO %d bytes ENCODED...\n", choice_len);
+            if((data_len = antenna_read_rs(data, choice_len, READ_MODE_UPTO)) < 0) {
+              printf("[!] failed to antenna read upto %d bytes\n", choice_len);
+              return -1;
+            }
+          } else {
+            printf("[i] Reading UPTO %d bytes...\n", choice_len);
+            if((data_len = antenna_read(data, choice_len, READ_MODE_UPTO)) < 0) {
+              printf("[!] failed to antenna read upto %d bytes\n", choice_len);
+              return -1;
+            }
           }
-
         }
         break;
       case 'w':
-      case 'W':
         printf("[?] Enter message to send: ");
         scanf(" %s", data);
         data_len = strlen(data);
         if(antenna_write(data, data_len) < 0) {
+          printf("[!] failed to antenna write \"%s\" containing %d bytes\n", data, data_len);
+          return -1;
+        }
+        break;
+      case 'W':
+        printf("[?] Enter message to ENCODE & send: ");
+        scanf(" %s", data);
+        data_len = strlen(data);
+        if(antenna_write_rs(data, data_len) < 0) {
           printf("[!] failed to antenna write \"%s\" containing %d bytes\n", data, data_len);
           return -1;
         }
