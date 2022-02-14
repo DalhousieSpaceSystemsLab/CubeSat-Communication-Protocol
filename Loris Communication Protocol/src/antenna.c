@@ -76,6 +76,49 @@ int antenna_write(const char* data, size_t data_len) {
 }
 
 /**
+ * @brief Writes bytes to the antenna with Reed-solomon FEC
+ * 
+ * @param data Array of bytes to send.
+ * @param data_len Number of bytes from data to send.
+ * @return 0 on success, -1 on error 
+ */
+int antenna_write_rs(const char* data, size_t data_len) {
+  // Encode data
+  int bytes_encoded = 0;
+  correct_reed_solomon *encoder = correct_reed_solomon_create(correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, 2);
+  if(encoder == NULL) {
+    printf("[!] Failed to create RS encoder\n");
+    return -1;
+  }
+  while(bytes_encoded < data_len) {
+    // Encode block of data
+    int bytes_remaining = (data_len - bytes_encoded);
+    int bytes_to_encode = (bytes_remaining > MAX_READ_LEN) ? MAX_READ_LEN : bytes_remaining;
+    char data_encoded[255];
+    int data_encoded_len = correct_reed_solomon_encode(encoder, data, bytes_to_encode, data_encoded);
+    if(data_encoded_len < 0) {
+      printf("[!] Failed to encode data\n");
+      return -1;
+    }
+
+    // Send block
+    if(antenna_write(data_encoded, data_encoded_len) < 0) {
+      printf("[!] Failed to send block of encoded data\n");
+      return -1;
+    }
+
+    // Update counters
+    bytes_encoded += bytes_to_encode;
+  }
+
+  // Free encoder
+  correct_reed_solomon_destroy(encoder);
+
+  // done
+  return 0;
+}
+
+/**
  * @brief Reads bytes from the antenna. 
  * Note that there are 2 ways to read:
  * (1) Read UP TO read_len bytes,
@@ -128,4 +171,40 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
 
   // done
   return bytes_read;
+}
+
+/**
+ * @brief Reads Reed-solomon encoded bytes from the antenna.
+ * 
+ * @param buffer Output buffer array for incoming bytes.
+ * @param read_len Read UP TO or block UNTIL this many bytes read.
+ * @param read_mode Set to READ_MODE_UPTO or READ_MODE_UNTIL
+ * @return number of bytes read or < 0 for error.
+ */
+int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
+  // Read 255 byte block
+  char data[255];
+  char data_decoded[255];
+  if(antenna_read(data, 255, READ_MODE_UNTIL) < 0) {
+    printf("[!] Failed to read encoded data from the antenna\n");
+    return -1;
+  }
+
+  // Decode it
+  correct_reed_solomon *encoder = correct_reed_solomon_create(correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, 2);
+  int decoded_len = correct_reed_solomon_decode(encoder, data, 255, data_decoded);
+  if(decoded_len < 0) {
+    printf("[!] Failed to decode block\n");
+    return -1;
+  }
+
+  // Copy decoded data into buffer
+  int bytes_to_export = (read_len > decoded_len) ? decoded_len : read_len;
+  memcpy(buffer, data_decoded, bytes_to_export);
+
+  // Free encoder
+  correct_reed_solomon_destroy(encoder);
+
+  // done
+  return 0;
 }
