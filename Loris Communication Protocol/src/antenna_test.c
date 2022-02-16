@@ -99,6 +99,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Print results
+    printf("[i] Normal string print (may cause undefined output): %s\n", data);
     printf("[i] Data size = %d\n", data_len);
     printf("-- DATA DUMP --\n");
     for(int x = 0; x < data_len; x++) {
