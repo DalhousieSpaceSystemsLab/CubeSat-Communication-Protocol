@@ -206,5 +206,5 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
   correct_reed_solomon_destroy(encoder);
 
   // done
-  return 0;
+  return bytes_to_export;
 }
