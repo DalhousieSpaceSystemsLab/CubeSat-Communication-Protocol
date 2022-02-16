@@ -10,4 +10,4 @@ all:
 	${CC} -o ${TARGET}.bin -I ${INCLUDE} ${SRC} -L. -l correct
 
 test:
-	${CC} -o ${TEST_TARGET}.bin -I ${INCLUDE} ${SRC_TEST}
+	${CC} -o ${TEST_TARGET}.bin -I ${INCLUDE} ${SRC_TEST} -L. -l correct
