@@ -141,9 +141,14 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
     read_len = MAX_READ_LEN;
   }
 
-  // Check read mode
+  // Create placeholders for reading
   size_t bytes_read = 0;
   char buffer_in[MAX_READ_LEN];
+
+  // Cleanup buffer
+  memset(buffer_in, MAX_READ_LEN, 0);
+
+  // Check read mode
   if(read_mode == READ_MODE_UPTO) {
     if((bytes_read = read(uartfd, buffer_in, read_len)) < 0) {
       printf("[!] Failed to read from uartfd\n");
