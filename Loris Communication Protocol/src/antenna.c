@@ -187,17 +187,33 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
  * @return number of bytes read or < 0 for error.
  */
 int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
-  // Read 255 byte block
-  char data[255];
-  char data_decoded[255];
-  if(antenna_read(data, 255, READ_MODE_UNTIL) < 0) {
-    printf("[!] Failed to read encoded data from the antenna\n");
+  
+  // Allocate memory for incoming message
+  int bytes_to_read = (read_len / RS_BLOCK_LEN) * RS_BLOCK_LEN + RS_BLOCK_LEN;
+  char *buffer_in = (char*) malloc(bytes_to_read);
+  if(buffer_in == NULL) {
+    printf("[!] Failed to allocate memory for incoming encoded message\n");
+    return -1;
+  }
+  
+  // Read data
+  int bytes_read = -1;
+  if((bytes_read = antenna_read(buffer_in, bytes_to_read, read_mode)) < 0) {
+    printf("[!] Failed to read UPTO %d bytes from the antenna\n", bytes_to_read);
     return -1;
   }
 
+  // Allocate memory for decoded message
+  int max_decoded_len = bytes_to_read / RS_BLOCK_LEN * RS_DATA_LEN;
+  char *decoded = (char*) malloc(max_decoded_len);
+  if(decoded == NULL) {
+    printf("[!] Failed to allocate memory for decoded message\n");
+    return -1;
+  }
+  
   // Decode it
   correct_reed_solomon *encoder = correct_reed_solomon_create(correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, 2);
-  int decoded_len = correct_reed_solomon_decode(encoder, data, 255, data_decoded);
+  int decoded_len = correct_reed_solomon_decode(encoder, buffer_in, bytes_read, decoded);
   if(decoded_len < 0) {
     printf("[!] Failed to decode block\n");
     return -1;
@@ -205,11 +221,15 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
 
   // Copy decoded data into buffer
   int bytes_to_export = (read_len > decoded_len) ? decoded_len : read_len;
-  memcpy(buffer, data_decoded, bytes_to_export);
+  memcpy(buffer, decoded, bytes_to_export);
 
   // Free encoder
   correct_reed_solomon_destroy(encoder);
 
+  // Free memory
+  free(buffer_in);
+  free(decoded);
+  
   // done
   return bytes_to_export;
 }
