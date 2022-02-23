@@ -11,3 +11,9 @@ all:
 
 test:
 	${CC} -o ${TEST_TARGET}.bin -I ${INCLUDE} ${SRC_TEST} -L. -l correct
+
+obc: test
+	scp ${TEST_TARGET}.bin root@71.7.234.152:/home/root
+
+obc2: test
+	scp -P 2222 ${TEST_TARGET}.bin root@71.7.234.152:/home/root
