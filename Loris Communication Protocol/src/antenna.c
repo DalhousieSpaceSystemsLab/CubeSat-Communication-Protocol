@@ -212,11 +212,21 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
   }
   
   // Decode it
+  int bytes_decoded = 0;
+  int decoded_len   = 0;
   correct_reed_solomon *encoder = correct_reed_solomon_create(correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, 2);
-  int decoded_len = correct_reed_solomon_decode(encoder, buffer_in, bytes_read, decoded);
-  if(decoded_len < 0) {
-    printf("[!] Failed to decode block\n");
-    return -1;
+  while(bytes_decoded < bytes_read) {
+    // Decode block
+    int bytes_to_decode = (bytes_read - bytes_decoded) > RS_BLOCK_LEN ? RS_BLOCK_LEN : (bytes_read - bytes_decoded); // protection against overreading in block length multiple
+    int bytes_decoded_this_time = correct_reed_solomon_decode(encoder, &buffer_in[bytes_decoded], bytes_to_decode, &decoded[decoded_len]);
+    if(bytes_decoded_this_time < 0) {
+      printf("[!] Failed to decode block\n");
+      return -1;
+    }
+
+    // Update counters
+    bytes_decoded += bytes_to_decode;
+    decoded_len += bytes_decoded_this_time;
   }
 
   // Copy decoded data into buffer
