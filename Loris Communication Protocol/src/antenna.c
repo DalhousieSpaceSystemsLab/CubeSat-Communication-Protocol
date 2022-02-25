@@ -2,6 +2,7 @@
 
 // Glocal variables
 static int uartfd = -1;
+static int panic_errno = 0;
 
 /**
  * @brief Initializes the UART port for the antenna.
@@ -187,10 +188,16 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
  * @return number of bytes read or < 0 for error.
  */
 int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
+  // Reset panic
+  panic_errno = 0;
   
+  // Create placeholders for memory 
+  char *buffer_in = NULL;
+  char *decoded   = NULL;
+
   // Allocate memory for incoming message
   int bytes_to_read = (read_len / RS_BLOCK_LEN) * RS_BLOCK_LEN + RS_BLOCK_LEN;
-  char *buffer_in = (char*) malloc(bytes_to_read);
+  buffer_in = (char*) malloc(bytes_to_read);
   if(buffer_in == NULL) {
     printf("[!] Failed to allocate memory for incoming encoded message\n");
     return -1;
@@ -200,15 +207,17 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
   int bytes_read = -1;
   if((bytes_read = antenna_read(buffer_in, bytes_to_read, read_mode)) < 0) {
     printf("[!] Failed to read UPTO %d bytes from the antenna\n", bytes_to_read);
-    return -1;
+    panic_errno = -1;
+    goto cleanup;
   }
 
   // Allocate memory for decoded message
   int max_decoded_len = bytes_to_read / RS_BLOCK_LEN * RS_DATA_LEN;
-  char *decoded = (char*) malloc(max_decoded_len);
+  decoded = (char*) malloc(max_decoded_len);
   if(decoded == NULL) {
     printf("[!] Failed to allocate memory for decoded message\n");
-    return -1;
+    panic_errno = -1;
+    goto cleanup;
   }
   
   // Decode it
@@ -217,11 +226,12 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
   correct_reed_solomon *encoder = correct_reed_solomon_create(correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, 2);
   while(bytes_decoded < bytes_read) {
     // Decode block
-    int bytes_to_decode = (bytes_read - bytes_decoded) > RS_BLOCK_LEN ? RS_BLOCK_LEN : (bytes_read - bytes_decoded); // protection against overreading in block length multiple
+    int bytes_to_decode = ((bytes_read - bytes_decoded) > RS_BLOCK_LEN) ? RS_BLOCK_LEN : (bytes_read - bytes_decoded); // protection against overreading in block length multiple
     int bytes_decoded_this_time = correct_reed_solomon_decode(encoder, &buffer_in[bytes_decoded], bytes_to_decode, &decoded[decoded_len]);
     if(bytes_decoded_this_time < 0) {
       printf("[!] Failed to decode block\n");
-      return -1;
+      panic_errno = -1;
+      goto cleanup;
     }
 
     // Update counters
@@ -236,9 +246,11 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
   // Free encoder
   correct_reed_solomon_destroy(encoder);
 
-  // Free memory
-  free(buffer_in);
-  free(decoded);
+  cleanup:
+    // Free memory
+    free(buffer_in);
+    free(decoded);
+    if(panic_errno) return panic_errno;
   
   // done
   return bytes_to_export;
