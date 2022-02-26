@@ -2,7 +2,6 @@
 
 // Glocal variables
 static int uartfd = -1;
-static int panic_errno = 0;
 
 /**
  * @brief Initializes the UART port for the antenna.
@@ -189,7 +188,7 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
  */
 int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
   // Reset panic
-  panic_errno = 0;
+  int status = 0;
   
   // Create placeholders for memory 
   char *buffer_in = NULL;
@@ -207,7 +206,7 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
   int bytes_read = -1;
   if((bytes_read = antenna_read(buffer_in, bytes_to_read, read_mode)) < 0) {
     printf("[!] Failed to read UPTO %d bytes from the antenna\n", bytes_to_read);
-    panic_errno = -1;
+    status = -1;
     goto cleanup;
   }
 
@@ -216,7 +215,7 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
   decoded = (char*) malloc(max_decoded_len);
   if(decoded == NULL) {
     printf("[!] Failed to allocate memory for decoded message\n");
-    panic_errno = -1;
+    status = -1;
     goto cleanup;
   }
   
@@ -230,7 +229,7 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
     int bytes_decoded_this_time = correct_reed_solomon_decode(encoder, &buffer_in[bytes_decoded], bytes_to_decode, &decoded[decoded_len]);
     if(bytes_decoded_this_time < 0) {
       printf("[!] Failed to decode block\n");
-      panic_errno = -1;
+      status = -1;
       goto cleanup;
     }
 
@@ -250,7 +249,7 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
     // Free memory
     free(buffer_in);
     free(decoded);
-    if(panic_errno) return panic_errno;
+    if(status != 0) return status;
   
   // done
   return bytes_to_export;
