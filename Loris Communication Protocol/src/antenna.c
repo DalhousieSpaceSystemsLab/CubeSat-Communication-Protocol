@@ -187,70 +187,50 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
  * @return number of bytes read or < 0 for error.
  */
 int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
-  // Reset panic
-  int status = 0;
-  
-  // Create placeholders for memory 
-  char *buffer_in = NULL;
-  char *decoded   = NULL;
-
-  // Allocate memory for incoming message
-  int bytes_to_read = (read_len / RS_BLOCK_LEN) * RS_BLOCK_LEN + RS_BLOCK_LEN;
-  buffer_in = (char*) malloc(bytes_to_read);
-  if(buffer_in == NULL) {
-    printf("[!] Failed to allocate memory for incoming encoded message\n");
+  // Create encoder
+  correct_reed_solomon *encoder = correct_reed_solomon_create(correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, 2);
+  if(encoder == NULL) {
+    printf("[!] Failed to create RS encoder\n");
     return -1;
   }
-  
-  // Read data
-  int bytes_read = -1;
-  if((bytes_read = antenna_read(buffer_in, bytes_to_read, read_mode)) < 0) {
-    printf("[!] Failed to read UPTO %d bytes from the antenna\n", bytes_to_read);
-    status = -1;
-    goto cleanup;
-  }
 
-  // Allocate memory for decoded message
-  int max_decoded_len = bytes_to_read / RS_BLOCK_LEN * RS_DATA_LEN;
-  decoded = (char*) malloc(max_decoded_len);
-  if(decoded == NULL) {
-    printf("[!] Failed to allocate memory for decoded message\n");
-    status = -1;
-    goto cleanup;
-  }
-  
-  // Decode it
+  // Create placeholders
   int bytes_decoded = 0;
-  int decoded_len   = 0;
-  correct_reed_solomon *encoder = correct_reed_solomon_create(correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, 2);
-  while(bytes_decoded < bytes_read) {
-    // Decode block
-    int bytes_to_decode = ((bytes_read - bytes_decoded) > RS_BLOCK_LEN) ? RS_BLOCK_LEN : (bytes_read - bytes_decoded); // protection against overreading in block length multiple
-    int bytes_decoded_this_time = correct_reed_solomon_decode(encoder, &buffer_in[bytes_decoded], bytes_to_decode, &decoded[decoded_len]);
-    if(bytes_decoded_this_time < 0) {
-      printf("[!] Failed to decode block\n");
-      status = -1;
-      goto cleanup;
+  char data_in[RS_BLOCK_LEN];
+
+  // Parse incoming blocks until length satisfied
+  while(bytes_decoded < read_len) {
+    // Clear incoming buffer
+    memset(data_in, 0, RS_BLOCK_LEN);
+
+    // Read block
+    int bytes_read = -1;
+    if((bytes_read = antenna_read(data_in, RS_BLOCK_LEN, read_mode)) < 0) {
+      printf("[!] Failed to read encoded block from antenna\n");
+      return -1;
     }
 
-    // Update counters
-    bytes_decoded += bytes_to_decode;
-    decoded_len += bytes_decoded_this_time;
-  }
+    // Placeholder for decoded bytes
+    char decoded[RS_DATA_LEN];
 
-  // Copy decoded data into buffer
-  int bytes_to_export = (read_len > decoded_len) ? decoded_len : read_len;
-  memcpy(buffer, decoded, bytes_to_export);
+    // Decode it
+    int new_bytes_decoded = -1;
+    if((new_bytes_decoded = correct_reed_solomon_decode(encoder, data_in, bytes_read, decoded)) < 0) {
+      printf("[!] Failed to decode incoming block\n");
+      return -1;
+    }
+
+    // Copy decoded bytes into buffer
+    int bytes_to_copy = (read_len - bytes_decoded) > new_bytes_decoded ? new_bytes_decoded : (read_len - bytes_decoded);
+    memcpy(&buffer[bytes_decoded], decoded, bytes_to_copy);
+
+    // Update counters
+    bytes_decoded += bytes_to_copy;
+  }
 
   // Free encoder
   correct_reed_solomon_destroy(encoder);
 
-  cleanup:
-    // Free memory
-    free(buffer_in);
-    free(decoded);
-    if(status != 0) return status;
-  
   // done
-  return bytes_to_export;
+  return bytes_decoded;
 }
