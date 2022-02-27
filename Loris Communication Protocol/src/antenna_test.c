@@ -18,15 +18,20 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
+  int MAX_TXT_FILE_SIZE = 8191;
+
   // Main loop
   int done = 0;
   while(!done) {
     char choice;
     char encoded;
     int choice_len = 0;
+    char file_name[20];
     char data[MAX_READ_LEN];
+    int skip_data_dump = 0;
     int data_len = -1;
-    printf("[?] Read or write (r/w) or encoded (R/W): ");
+
+    printf("[?] Read or write (r/w) or encoded (R/W) or receive text file (f) or send text file (F)");
     scanf(" %c", &choice);
 
     switch(choice) {
@@ -44,7 +49,6 @@ int main(int argc, char *argv[]) {
         scanf(" %c", &choice);
         printf("[?] How many: ");
         scanf("%d", &choice_len);
-        
         if(choice == 'u') {
           if(encoded == 'y') {
             printf("[i] Reading UNTIL %d bytes ENCODED...\n", choice_len);
@@ -75,6 +79,25 @@ int main(int argc, char *argv[]) {
           }
         }
         break;
+      // messy. move contents to a function.
+      case 'f':
+        FILE* file_pointer = fopen("output.txt", "w");
+        if(file_pointer == NULL){
+          printf("[!] failed to open file \"output.txt\"\n");
+          return -1;
+        }  
+        char txt_file_data[MAX_TXT_FILE_SIZE];
+        printf("[!] Reading text file...\n");
+        if((data_len = antenna_read(txt_file_data, MAX_TXT_FILE_SIZE, READ_MODE_UPTO)) < 0) {
+          printf("[!] failed to antenna read upto %d bytes\n", choice_len);
+          return -1;
+        }
+        fputs(txt_file_data, file_pointer);
+        printf("\n%s\n", txt_file_data);
+        printf("[!] text file contents written to \"output.txt\"\n");
+        skip_data_dump = 1;
+        break;
+
       case 'w':
         printf("[?] Enter message to send: ");
         scanf(" %s", data);
@@ -93,9 +116,38 @@ int main(int argc, char *argv[]) {
           return -1;
         }
         break;
+
+      // messy. move contents to a function. 
+      case 'F':
+      // fileName must be <20 characters in length.
+        printf("[?] Enter text file to send unencoded: ");
+      // hardcoding a designated filename would make repeated testing faster. 
+        scanf("%s", file_name);
+        char txt_file_data[MAX_TXT_FILE_SIZE];
+        FILE* file_pointer = fopen(file_name, "r");
+        if(file_pointer == NULL){
+          printf("[!] failed to open file \"%s\"\n", fileName);
+          return -1;
+        }
+        while(fgets(data, MAX_READ_LEN, filePointer)){
+          strcat(txt_file_data, data);   
+        }
+        data_len = strlen(txt_file_data);
+        if(antenna_write(txt_file_data, data_len) < 0) {
+          printf("[!] failed to antenna write text file \"%s\" containing %d bytes\n", file_name, data_len);
+          return -1;
+        }
+        skip_data_dump = 1;
+        break;
+
       default:
         printf("[!] %c is not a valid option\n", choice);
         continue;
+    }
+
+    // skips data dump when dealing with txt files. 
+    if(skip_data_dump){
+      continue;
     }
 
     // Print results
