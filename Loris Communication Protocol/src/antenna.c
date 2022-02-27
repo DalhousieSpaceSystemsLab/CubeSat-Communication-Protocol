@@ -187,29 +187,50 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
  * @return number of bytes read or < 0 for error.
  */
 int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
-  // Read 255 byte block
-  char data[255];
-  char data_decoded[255];
-  if(antenna_read(data, 255, READ_MODE_UNTIL) < 0) {
-    printf("[!] Failed to read encoded data from the antenna\n");
-    return -1;
-  }
-
-  // Decode it
+  // Create encoder
   correct_reed_solomon *encoder = correct_reed_solomon_create(correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, 2);
-  int decoded_len = correct_reed_solomon_decode(encoder, data, 255, data_decoded);
-  if(decoded_len < 0) {
-    printf("[!] Failed to decode block\n");
+  if(encoder == NULL) {
+    printf("[!] Failed to create RS encoder\n");
     return -1;
   }
 
-  // Copy decoded data into buffer
-  int bytes_to_export = (read_len > decoded_len) ? decoded_len : read_len;
-  memcpy(buffer, data_decoded, bytes_to_export);
+  // Create placeholders
+  int bytes_decoded = 0;
+  char data_in[RS_BLOCK_LEN];
+
+  // Parse incoming blocks until length satisfied
+  while(bytes_decoded < read_len) {
+    // Clear incoming buffer
+    memset(data_in, 0, RS_BLOCK_LEN);
+
+    // Read block
+    int bytes_read = -1;
+    if((bytes_read = antenna_read(data_in, RS_BLOCK_LEN, read_mode)) < 0) {
+      printf("[!] Failed to read encoded block from antenna\n");
+      return -1;
+    }
+
+    // Placeholder for decoded bytes
+    char decoded[RS_DATA_LEN];
+
+    // Decode it
+    int new_bytes_decoded = -1;
+    if((new_bytes_decoded = correct_reed_solomon_decode(encoder, data_in, bytes_read, decoded)) < 0) {
+      printf("[!] Failed to decode incoming block\n");
+      return -1;
+    }
+
+    // Copy decoded bytes into buffer
+    int bytes_to_copy = (read_len - bytes_decoded) > new_bytes_decoded ? new_bytes_decoded : (read_len - bytes_decoded);
+    memcpy(&buffer[bytes_decoded], decoded, bytes_to_copy);
+
+    // Update counters
+    bytes_decoded += bytes_to_copy;
+  }
 
   // Free encoder
   correct_reed_solomon_destroy(encoder);
 
   // done
-  return bytes_to_export;
+  return bytes_decoded;
 }

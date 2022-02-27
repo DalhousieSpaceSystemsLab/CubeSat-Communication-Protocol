@@ -15,11 +15,17 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 
-// Settings
+// Settings //
+// UART
 #define UART_SPEED B9600
 #define UART_PARITY 0
+
+// Antenna
 #define MAX_READ_LEN 256
+#define RS_BLOCK_LEN 255
+#define RS_DATA_LEN  234
 
 enum {
   READ_MODE_UPTO,
