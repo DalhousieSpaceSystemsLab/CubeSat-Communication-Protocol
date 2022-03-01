@@ -126,10 +126,10 @@ int main(int argc, char *argv[]) {
         char txt_file_data[MAX_TXT_FILE_SIZE];
         FILE* file_pointer = fopen(file_name, "r");
         if(file_pointer == NULL){
-          printf("[!] failed to open file \"%s\"\n", fileName);
+          printf("[!] failed to open file \"%s\"\n", file_name);
           return -1;
         }
-        while(fgets(data, MAX_READ_LEN, filePointer)){
+        while(fgets(data, MAX_READ_LEN, file_pointer)){
           strcat(txt_file_data, data);   
         }
         data_len = strlen(txt_file_data);
