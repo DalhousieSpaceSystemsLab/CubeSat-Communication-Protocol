@@ -18,8 +18,6 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  int MAX_TXT_FILE_SIZE = 8191;
-
   // Main loop
   int done = 0;
   while (!done) {
@@ -27,7 +25,7 @@ int main(int argc, char *argv[]) {
     char encoded;
     int choice_len = 0;
     char file_name[20];
-    char data[MAX_READ_LEN];
+    char data[MAX_TXT_FILE_SIZE];
     int skip_data_dump = 0;
     int data_len = -1;
 
@@ -95,9 +93,14 @@ int main(int argc, char *argv[]) {
           printf("[!] failed to open file \"output.txt\"\n");
           return -1;
         }
+        printf("[?] How many bytes would you like to read: ");
+        int bytes_to_read = 0;
+        scanf(" %d", &bytes_to_read);
+        if (bytes_to_read > MAX_TXT_FILE_SIZE)
+          bytes_to_read = MAX_TXT_FILE_SIZE;
         printf("[!] Reading text file...\n");
-        if ((data_len = antenna_read(txt_file_data, MAX_TXT_FILE_SIZE,
-                                     READ_MODE_UPTO)) < 0) {
+        if ((data_len = antenna_read_rs(txt_file_data, bytes_to_read,
+                                        READ_MODE_UNTIL)) < 0) {
           printf("[!] failed to antenna read upto %d bytes\n", choice_len);
           return -1;
         }
@@ -143,7 +146,7 @@ int main(int argc, char *argv[]) {
           strcat(txt_file_data, data);
         }
         data_len = strlen(txt_file_data);
-        if (antenna_write(txt_file_data, data_len) < 0) {
+        if (antenna_write_rs(txt_file_data, data_len) < 0) {
           printf(
               "[!] failed to antenna write text file \"%s\" containing %d "
               "bytes\n",
@@ -164,7 +167,9 @@ int main(int argc, char *argv[]) {
     }
 
     // Print results
-    printf("[i] Normal string print (may cause undefined output): %s\n", data);
+    printf("[i] Normal string print (may cause undefined output): ");
+    for (int x = 0; x < data_len; x++) printf("%c", data[x]);
+    printf("\n");
     printf("[i] Data size = %d\n", data_len);
     printf("-- DATA DUMP --\n");
     for (int x = 0; x < data_len; x++) {

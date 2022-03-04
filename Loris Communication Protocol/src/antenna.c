@@ -95,10 +95,10 @@ int antenna_write_rs(const char *data, size_t data_len) {
     // Encode block of data
     int bytes_remaining = (data_len - bytes_encoded);
     int bytes_to_encode =
-        (bytes_remaining > MAX_READ_LEN) ? MAX_READ_LEN : bytes_remaining;
+        (bytes_remaining > RS_DATA_LEN) ? RS_DATA_LEN : bytes_remaining;
     char data_encoded[255];
     int data_encoded_len = correct_reed_solomon_encode(
-        encoder, data, bytes_to_encode, data_encoded);
+        encoder, &data[bytes_encoded], bytes_to_encode, data_encoded);
     if (data_encoded_len < 0) {
       printf("[!] Failed to encode data\n");
       return -1;
@@ -141,21 +141,12 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
     return -1;
   }
 
-  // Update read_len if > MAX
-  if (read_len > MAX_READ_LEN) {
-    read_len = MAX_READ_LEN;
-  }
-
   // Create placeholders for reading
   size_t bytes_read = 0;
-  char buffer_in[MAX_READ_LEN];
-
-  // Cleanup buffer
-  memset(buffer_in, MAX_READ_LEN, 0);
 
   // Check read mode
   if (read_mode == READ_MODE_UPTO) {
-    if ((bytes_read = read(uartfd, buffer_in, read_len)) < 0) {
+    if ((bytes_read = read(uartfd, buffer, read_len)) < 0) {
       printf("[!] Failed to read from uartfd\n");
       return -1;
     }
@@ -163,8 +154,8 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
     while (bytes_read < read_len) {
       // Read bytes
       int new_bytes_read = -1;
-      if ((new_bytes_read = read(uartfd, &buffer_in[bytes_read],
-                                 read_len - bytes_read)) < 0) {
+      if ((new_bytes_read =
+               read(uartfd, &buffer[bytes_read], read_len - bytes_read)) < 0) {
         printf("[!] Failed to read from uartfd\n");
         return -1;
       }
@@ -176,9 +167,6 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
     printf("[!] Invalid read mode. Try READ_MODE_UPTO or READ_MODE_UNTIL\n");
     return -1;
   }
-
-  // Copy internal buffer out
-  memcpy(buffer, buffer_in, bytes_read);
 
   // done
   return bytes_read;
