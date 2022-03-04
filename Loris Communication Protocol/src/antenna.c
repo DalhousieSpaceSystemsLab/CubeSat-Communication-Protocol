@@ -206,7 +206,7 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
   char data_in[RS_BLOCK_LEN];
 
   // Parse incoming blocks until length satisfied
-  while (bytes_decoded < read_len) {
+  do {
     // Clear incoming buffer
     memset(data_in, 0, RS_BLOCK_LEN);
 
@@ -236,7 +236,7 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
 
     // Update counters
     bytes_decoded += bytes_to_copy;
-  }
+  } while (bytes_decoded < read_len && read_mode == READ_MODE_UNTIL);
 
   // Free encoder
   correct_reed_solomon_destroy(encoder);
