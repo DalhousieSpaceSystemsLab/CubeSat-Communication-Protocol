@@ -7,13 +7,13 @@
 
 int main(int argc, char *argv[]) {
   // Check argc
-  if(argc != 2) {
+  if (argc != 2) {
     printf("[!] Invalid number of arguments. Try ./antenna_test PATH\n");
     return -1;
   }
 
   // Init
-  if(antenna_init(argv[1]) < 0) {
+  if (antenna_init(argv[1]) < 0) {
     printf("[!] Failed to init antenna\n");
     return -1;
   }
@@ -22,7 +22,7 @@ int main(int argc, char *argv[]) {
 
   // Main loop
   int done = 0;
-  while(!done) {
+  while (!done) {
     char choice;
     char encoded;
     int choice_len = 0;
@@ -31,13 +31,18 @@ int main(int argc, char *argv[]) {
     int skip_data_dump = 0;
     int data_len = -1;
 
-    printf("[?] Read or write (r/w) or encoded (R/W) or receive text file (f) or send text file (F)");
+    FILE *file_pointer;
+    char txt_file_data[MAX_TXT_FILE_SIZE];
+
+    printf(
+        "[?] Read or write (r/w) or encoded (R/W) or receive text file (f) or "
+        "send text file (F)");
     scanf(" %c", &choice);
 
-    switch(choice) {
+    switch (choice) {
       case 'r':
         printf("[i] Reading UPTO %d bytes\n", MAX_READ_LEN);
-        if((data_len = antenna_read(data, MAX_READ_LEN, READ_MODE_UPTO)) < 0) {
+        if ((data_len = antenna_read(data, MAX_READ_LEN, READ_MODE_UPTO)) < 0) {
           printf("[!] failed to antenna read UPTO %d bytes\n", MAX_READ_LEN);
           return -1;
         }
@@ -49,30 +54,34 @@ int main(int argc, char *argv[]) {
         scanf(" %c", &choice);
         printf("[?] How many: ");
         scanf("%d", &choice_len);
-        if(choice == 'u') {
-          if(encoded == 'y') {
+        if (choice == 'u') {
+          if (encoded == 'y') {
             printf("[i] Reading UNTIL %d bytes ENCODED...\n", choice_len);
-            if((data_len = antenna_read_rs(data, choice_len, READ_MODE_UNTIL)) < 0) {
+            if ((data_len =
+                     antenna_read_rs(data, choice_len, READ_MODE_UNTIL)) < 0) {
               printf("[!] failed to antenna read until %d bytes\n", choice_len);
               return -1;
             }
           } else {
             printf("[i] Reading UNTIL %d bytes...\n", choice_len);
-            if((data_len = antenna_read(data, choice_len, READ_MODE_UNTIL)) < 0) {
+            if ((data_len = antenna_read(data, choice_len, READ_MODE_UNTIL)) <
+                0) {
               printf("[!] failed to antenna read until %d bytes\n", choice_len);
               return -1;
             }
           }
         } else {
-          if(encoded == 'y') {
+          if (encoded == 'y') {
             printf("[i] Reading UPTO %d bytes ENCODED...\n", choice_len);
-            if((data_len = antenna_read_rs(data, choice_len, READ_MODE_UPTO)) < 0) {
+            if ((data_len = antenna_read_rs(data, choice_len, READ_MODE_UPTO)) <
+                0) {
               printf("[!] failed to antenna read upto %d bytes\n", choice_len);
               return -1;
             }
           } else {
             printf("[i] Reading UPTO %d bytes...\n", choice_len);
-            if((data_len = antenna_read(data, choice_len, READ_MODE_UPTO)) < 0) {
+            if ((data_len = antenna_read(data, choice_len, READ_MODE_UPTO)) <
+                0) {
               printf("[!] failed to antenna read upto %d bytes\n", choice_len);
               return -1;
             }
@@ -81,14 +90,14 @@ int main(int argc, char *argv[]) {
         break;
       // messy. move contents to a function.
       case 'f':
-        FILE* file_pointer = fopen("output.txt", "w");
-        if(file_pointer == NULL){
+        file_pointer = fopen("output.txt", "w");
+        if (file_pointer == NULL) {
           printf("[!] failed to open file \"output.txt\"\n");
           return -1;
-        }  
-        char txt_file_data[MAX_TXT_FILE_SIZE];
+        }
         printf("[!] Reading text file...\n");
-        if((data_len = antenna_read(txt_file_data, MAX_TXT_FILE_SIZE, READ_MODE_UPTO)) < 0) {
+        if ((data_len = antenna_read(txt_file_data, MAX_TXT_FILE_SIZE,
+                                     READ_MODE_UPTO)) < 0) {
           printf("[!] failed to antenna read upto %d bytes\n", choice_len);
           return -1;
         }
@@ -102,8 +111,9 @@ int main(int argc, char *argv[]) {
         printf("[?] Enter message to send: ");
         scanf(" %s", data);
         data_len = strlen(data);
-        if(antenna_write(data, data_len) < 0) {
-          printf("[!] failed to antenna write \"%s\" containing %d bytes\n", data, data_len);
+        if (antenna_write(data, data_len) < 0) {
+          printf("[!] failed to antenna write \"%s\" containing %d bytes\n",
+                 data, data_len);
           return -1;
         }
         break;
@@ -111,30 +121,33 @@ int main(int argc, char *argv[]) {
         printf("[?] Enter message to ENCODE & send: ");
         scanf(" %s", data);
         data_len = strlen(data);
-        if(antenna_write_rs(data, data_len) < 0) {
-          printf("[!] failed to antenna write \"%s\" containing %d bytes\n", data, data_len);
+        if (antenna_write_rs(data, data_len) < 0) {
+          printf("[!] failed to antenna write \"%s\" containing %d bytes\n",
+                 data, data_len);
           return -1;
         }
         break;
 
-      // messy. move contents to a function. 
+      // messy. move contents to a function.
       case 'F':
-      // fileName must be <20 characters in length.
+        // fileName must be <20 characters in length.
         printf("[?] Enter text file to send unencoded: ");
-      // hardcoding a designated filename would make repeated testing faster. 
+        // hardcoding a designated filename would make repeated testing faster.
         scanf("%s", file_name);
-        char txt_file_data[MAX_TXT_FILE_SIZE];
-        FILE* file_pointer = fopen(file_name, "r");
-        if(file_pointer == NULL){
+        file_pointer = fopen(file_name, "r");
+        if (file_pointer == NULL) {
           printf("[!] failed to open file \"%s\"\n", file_name);
           return -1;
         }
-        while(fgets(data, MAX_READ_LEN, file_pointer)){
-          strcat(txt_file_data, data);   
+        while (fgets(data, MAX_READ_LEN, file_pointer)) {
+          strcat(txt_file_data, data);
         }
         data_len = strlen(txt_file_data);
-        if(antenna_write(txt_file_data, data_len) < 0) {
-          printf("[!] failed to antenna write text file \"%s\" containing %d bytes\n", file_name, data_len);
+        if (antenna_write(txt_file_data, data_len) < 0) {
+          printf(
+              "[!] failed to antenna write text file \"%s\" containing %d "
+              "bytes\n",
+              file_name, data_len);
           return -1;
         }
         skip_data_dump = 1;
@@ -145,8 +158,8 @@ int main(int argc, char *argv[]) {
         continue;
     }
 
-    // skips data dump when dealing with txt files. 
-    if(skip_data_dump){
+    // skips data dump when dealing with txt files.
+    if (skip_data_dump) {
       continue;
     }
 
@@ -154,9 +167,9 @@ int main(int argc, char *argv[]) {
     printf("[i] Normal string print (may cause undefined output): %s\n", data);
     printf("[i] Data size = %d\n", data_len);
     printf("-- DATA DUMP --\n");
-    for(int x = 0; x < data_len; x++) {
+    for (int x = 0; x < data_len; x++) {
       printf("%.2x=\'%c\' ", data[x], data[x]);
-    }    
+    }
     printf("\n-- END DUMP --\n");
   }
 

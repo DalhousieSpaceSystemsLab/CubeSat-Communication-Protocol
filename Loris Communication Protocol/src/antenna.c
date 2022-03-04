@@ -5,21 +5,19 @@ static int uartfd = -1;
 
 /**
  * @brief Initializes the UART port for the antenna.
- * 
+ *
  * @param path Sets the device path to configure.
  * @return 0 on success, 1 on error.
  */
-int antenna_init(const char* path) {
-  if ((uartfd = open(path, O_RDWR | O_NOCTTY | O_SYNC)) < 0)
-  {
+int antenna_init(const char *path) {
+  if ((uartfd = open(path, O_RDWR | O_NOCTTY | O_SYNC)) < 0) {
     printf("[!] Failed to open I/O device at %s\n", path);
     return -1;
   }
-  
+
   struct termios tty;
 
-  if (tcgetattr(uartfd, &tty) < 0)
-  {
+  if (tcgetattr(uartfd, &tty) < 0) {
     printf("Error from tcgetattr: %s\n", strerror(errno));
     return -1;
   }
@@ -35,7 +33,8 @@ int antenna_init(const char* path) {
   tty.c_cflag &= ~CRTSCTS; /* no hardware flowcontrol */
 
   /* setup for non-canonical mode */
-  tty.c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
+  tty.c_iflag &=
+      ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
   tty.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
   tty.c_oflag &= ~OPOST;
 
@@ -43,8 +42,7 @@ int antenna_init(const char* path) {
   tty.c_cc[VMIN] = 1;
   tty.c_cc[VTIME] = 1;
 
-  if (tcsetattr(uartfd, TCSANOW, &tty) != 0)
-  {
+  if (tcsetattr(uartfd, TCSANOW, &tty) != 0) {
     printf("Error from tcsetattr: %s\n", strerror(errno));
     return -1;
   }
@@ -52,21 +50,23 @@ int antenna_init(const char* path) {
 
 /**
  * @brief Writes bytes to the antenna.
- * 
+ *
  * @param data Array of bytes to send.
  * @param data_len Number of bytes from data to send.
- * 
+ *
  * @return 0 on success, -1 on error
  */
-int antenna_write(const char* data, size_t data_len) {
+int antenna_write(const char *data, size_t data_len) {
   // Make sure file desc initialized
-  if(uartfd == -1) {
-    printf("[!] Cannot write to unitialized fd. Make sure to run antenna_init() first\n");
+  if (uartfd == -1) {
+    printf(
+        "[!] Cannot write to unitialized fd. Make sure to run antenna_init() "
+        "first\n");
     return -1;
   }
 
   // Write bytes to antenna
-  if(write(uartfd, data, data_len) < data_len) {
+  if (write(uartfd, data, data_len) < data_len) {
     printf("[!] Failed to send data of %d bytes in length.\n", data_len);
     return -1;
   }
@@ -77,32 +77,35 @@ int antenna_write(const char* data, size_t data_len) {
 
 /**
  * @brief Writes bytes to the antenna with Reed-solomon FEC
- * 
+ *
  * @param data Array of bytes to send.
  * @param data_len Number of bytes from data to send.
- * @return 0 on success, -1 on error 
+ * @return 0 on success, -1 on error
  */
-int antenna_write_rs(const char* data, size_t data_len) {
+int antenna_write_rs(const char *data, size_t data_len) {
   // Encode data
   int bytes_encoded = 0;
-  correct_reed_solomon *encoder = correct_reed_solomon_create(correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, 2);
-  if(encoder == NULL) {
+  correct_reed_solomon *encoder = correct_reed_solomon_create(
+      correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, 2);
+  if (encoder == NULL) {
     printf("[!] Failed to create RS encoder\n");
     return -1;
   }
-  while(bytes_encoded < data_len) {
+  while (bytes_encoded < data_len) {
     // Encode block of data
     int bytes_remaining = (data_len - bytes_encoded);
-    int bytes_to_encode = (bytes_remaining > MAX_READ_LEN) ? MAX_READ_LEN : bytes_remaining;
+    int bytes_to_encode =
+        (bytes_remaining > MAX_READ_LEN) ? MAX_READ_LEN : bytes_remaining;
     char data_encoded[255];
-    int data_encoded_len = correct_reed_solomon_encode(encoder, data, bytes_to_encode, data_encoded);
-    if(data_encoded_len < 0) {
+    int data_encoded_len = correct_reed_solomon_encode(
+        encoder, data, bytes_to_encode, data_encoded);
+    if (data_encoded_len < 0) {
       printf("[!] Failed to encode data\n");
       return -1;
     }
 
     // Send block
-    if(antenna_write(data_encoded, data_encoded_len) < 0) {
+    if (antenna_write(data_encoded, data_encoded_len) < 0) {
       printf("[!] Failed to send block of encoded data\n");
       return -1;
     }
@@ -119,11 +122,11 @@ int antenna_write_rs(const char* data, size_t data_len) {
 }
 
 /**
- * @brief Reads bytes from the antenna. 
+ * @brief Reads bytes from the antenna.
  * Note that there are 2 ways to read:
  * (1) Read UP TO read_len bytes,
  * (2) Block until read_len bytes have been read.
- * 
+ *
  * @param buffer Output buffer array for incoming bytes.
  * @param read_len Read UP TO or block UNTIL this many bytes read.
  * @param read_mode Set to READ_MODE_UPTO or READ_MODE_UNTIL
@@ -131,13 +134,15 @@ int antenna_write_rs(const char* data, size_t data_len) {
  */
 int antenna_read(char *buffer, size_t read_len, int read_mode) {
   // Make sure file desc initialized
-  if(uartfd == -1) {
-    printf("[!] Cannot read to unitialized fd. Make sure to run antenna_init() first\n");
+  if (uartfd == -1) {
+    printf(
+        "[!] Cannot read to unitialized fd. Make sure to run antenna_init() "
+        "first\n");
     return -1;
   }
 
   // Update read_len if > MAX
-  if(read_len > MAX_READ_LEN) {
+  if (read_len > MAX_READ_LEN) {
     read_len = MAX_READ_LEN;
   }
 
@@ -149,16 +154,17 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
   memset(buffer_in, MAX_READ_LEN, 0);
 
   // Check read mode
-  if(read_mode == READ_MODE_UPTO) {
-    if((bytes_read = read(uartfd, buffer_in, read_len)) < 0) {
+  if (read_mode == READ_MODE_UPTO) {
+    if ((bytes_read = read(uartfd, buffer_in, read_len)) < 0) {
       printf("[!] Failed to read from uartfd\n");
       return -1;
     }
-  } else if(read_mode == READ_MODE_UNTIL) {
-    while(bytes_read < read_len) {
+  } else if (read_mode == READ_MODE_UNTIL) {
+    while (bytes_read < read_len) {
       // Read bytes
       int new_bytes_read = -1;
-      if((new_bytes_read = read(uartfd, &buffer_in[bytes_read], read_len - bytes_read)) < 0) {
+      if ((new_bytes_read = read(uartfd, &buffer_in[bytes_read],
+                                 read_len - bytes_read)) < 0) {
         printf("[!] Failed to read from uartfd\n");
         return -1;
       }
@@ -180,7 +186,7 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
 
 /**
  * @brief Reads Reed-solomon encoded bytes from the antenna.
- * 
+ *
  * @param buffer Output buffer array for incoming bytes.
  * @param read_len Read UP TO or block UNTIL this many bytes read.
  * @param read_mode Set to READ_MODE_UPTO or READ_MODE_UNTIL
@@ -188,8 +194,9 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
  */
 int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
   // Create encoder
-  correct_reed_solomon *encoder = correct_reed_solomon_create(correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, 2);
-  if(encoder == NULL) {
+  correct_reed_solomon *encoder = correct_reed_solomon_create(
+      correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, 2);
+  if (encoder == NULL) {
     printf("[!] Failed to create RS encoder\n");
     return -1;
   }
@@ -199,13 +206,13 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
   char data_in[RS_BLOCK_LEN];
 
   // Parse incoming blocks until length satisfied
-  while(bytes_decoded < read_len) {
+  while (bytes_decoded < read_len) {
     // Clear incoming buffer
     memset(data_in, 0, RS_BLOCK_LEN);
 
     // Read block
     int bytes_read = -1;
-    if((bytes_read = antenna_read(data_in, RS_BLOCK_LEN, read_mode)) < 0) {
+    if ((bytes_read = antenna_read(data_in, RS_BLOCK_LEN, read_mode)) < 0) {
       printf("[!] Failed to read encoded block from antenna\n");
       return -1;
     }
@@ -215,13 +222,16 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
 
     // Decode it
     int new_bytes_decoded = -1;
-    if((new_bytes_decoded = correct_reed_solomon_decode(encoder, data_in, bytes_read, decoded)) < 0) {
+    if ((new_bytes_decoded = correct_reed_solomon_decode(
+             encoder, data_in, bytes_read, decoded)) < 0) {
       printf("[!] Failed to decode incoming block\n");
       return -1;
     }
 
     // Copy decoded bytes into buffer
-    int bytes_to_copy = (read_len - bytes_decoded) > new_bytes_decoded ? new_bytes_decoded : (read_len - bytes_decoded);
+    int bytes_to_copy = (read_len - bytes_decoded) > new_bytes_decoded
+                            ? new_bytes_decoded
+                            : (read_len - bytes_decoded);
     memcpy(&buffer[bytes_decoded], decoded, bytes_to_copy);
 
     // Update counters
