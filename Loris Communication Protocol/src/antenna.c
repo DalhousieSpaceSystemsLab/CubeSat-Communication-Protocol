@@ -86,7 +86,7 @@ int antenna_write_rs(const char *data, size_t data_len) {
   // Encode data
   int bytes_encoded = 0;
   correct_reed_solomon *encoder = correct_reed_solomon_create(
-      correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, 2);
+      correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, RS_NUM_ROOTS);
   if (encoder == NULL) {
     printf("[!] Failed to create RS encoder\n");
     return -1;
@@ -183,7 +183,7 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
 int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
   // Create encoder
   correct_reed_solomon *encoder = correct_reed_solomon_create(
-      correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, 2);
+      correct_rs_primitive_polynomial_8_4_3_2_0, 1, 1, RS_NUM_ROOTS);
   if (encoder == NULL) {
     printf("[!] Failed to create RS encoder\n");
     return -1;

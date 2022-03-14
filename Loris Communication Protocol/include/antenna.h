@@ -27,6 +27,9 @@
 #define RS_BLOCK_LEN 255
 #define RS_DATA_LEN 234
 
+// Reed-solomon
+#define RS_NUM_ROOTS 8
+
 enum { READ_MODE_UPTO, READ_MODE_UNTIL };
 
 /**
