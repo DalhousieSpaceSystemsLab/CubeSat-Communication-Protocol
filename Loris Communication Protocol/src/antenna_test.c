@@ -106,6 +106,7 @@ int main(int argc, char *argv[]) {
         }
         // fputs(txt_file_data, file_pointer);
         fwrite(txt_file_data, sizeof(char), data_len, file_pointer); // NOTE: using fwrite for this to work with bitmaps
+        fclose(file_pointer);
         printf("\n%s\n", txt_file_data);
         printf("[!] text file contents written to \"output.txt\"\n");
         skip_data_dump = 1;
@@ -148,6 +149,7 @@ int main(int argc, char *argv[]) {
         // }
         // data_len = strlen(txt_file_data);
         data_len = fread(txt_file_data, sizeof(char), MAX_TXT_FILE_SIZE, file_pointer); // NOTE: using fread for bitmaps to work
+        fclose(file_pointer);
         if (antenna_write_rs(txt_file_data, data_len) < 0) {
           printf(
               "[!] failed to antenna write text file \"%s\" containing %d "
