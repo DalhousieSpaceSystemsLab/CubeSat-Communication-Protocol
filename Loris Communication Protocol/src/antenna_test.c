@@ -104,7 +104,8 @@ int main(int argc, char *argv[]) {
           printf("[!] failed to antenna read upto %d bytes\n", choice_len);
           return -1;
         }
-        fputs(txt_file_data, file_pointer);
+        // fputs(txt_file_data, file_pointer);
+        fwrite(txt_file_data, sizeof(char), data_len, file_pointer); // NOTE: using fwrite for this to work with bitmaps
         printf("\n%s\n", txt_file_data);
         printf("[!] text file contents written to \"output.txt\"\n");
         skip_data_dump = 1;
@@ -142,10 +143,11 @@ int main(int argc, char *argv[]) {
           printf("[!] failed to open file \"%s\"\n", file_name);
           return -1;
         }
-        while (fgets(data, MAX_READ_LEN, file_pointer)) {
-          strcat(txt_file_data, data);
-        }
-        data_len = strlen(txt_file_data);
+        // while (fgets(data, MAX_READ_LEN, file_pointer)) {
+        //   strcat(txt_file_data, data);
+        // }
+        // data_len = strlen(txt_file_data);
+        data_len = fread(data, sizeof(char), MAX_TXT_FILE_SIZE, file_pointer); // NOTE: using fread for bitmaps to work
         if (antenna_write_rs(txt_file_data, data_len) < 0) {
           printf(
               "[!] failed to antenna write text file \"%s\" containing %d "
