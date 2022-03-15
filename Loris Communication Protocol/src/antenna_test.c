@@ -31,6 +31,8 @@ int main(int argc, char *argv[]) {
 
     FILE *file_pointer;
     char txt_file_data[MAX_TXT_FILE_SIZE];
+    char *dynamic_file_data = NULL;
+    size_t bytes_to_read;
 
     printf(
         "[?] Read or write (r/w) or encoded (R/W) or receive text file (f) or "
@@ -94,22 +96,24 @@ int main(int argc, char *argv[]) {
           return -1;
         }
         printf("[?] How many bytes would you like to read: ");
-        int bytes_to_read = 0;
-        scanf(" %d", &bytes_to_read);
-        if (bytes_to_read > MAX_TXT_FILE_SIZE)
-          bytes_to_read = MAX_TXT_FILE_SIZE;
+        bytes_to_read = 0;
+        scanf(" %lu", &bytes_to_read);
+        // if (bytes_to_read > MAX_TXT_FILE_SIZE)
+        //   bytes_to_read = MAX_TXT_FILE_SIZE;
+        dynamic_file_data = malloc(bytes_to_read);
         printf("[!] Reading text file...\n");
-        if ((data_len = antenna_read_rs(txt_file_data, bytes_to_read,
+        if ((data_len = antenna_read_rs(dynamic_file_data, bytes_to_read,
                                         READ_MODE_UNTIL)) < 0) {
           printf("[!] failed to antenna read upto %d bytes\n", choice_len);
           return -1;
         }
         // fputs(txt_file_data, file_pointer);
-        fwrite(txt_file_data, sizeof(char), data_len, file_pointer); // NOTE: using fwrite for this to work with bitmaps
+        fwrite(dynamic_file_data, sizeof(char), data_len, file_pointer); // NOTE: using fwrite for this to work with bitmaps
         fclose(file_pointer);
-        printf("\n%s\n", txt_file_data);
+        printf("\n%s\n", dynamic_file_data);
         printf("[!] text file contents written to \"output.txt\"\n");
         skip_data_dump = 1;
+        free(dynamic_file_data);
         break;
 
       case 'w':
@@ -148,9 +152,15 @@ int main(int argc, char *argv[]) {
         //   strcat(txt_file_data, data);
         // }
         // data_len = strlen(txt_file_data);
-        data_len = fread(txt_file_data, sizeof(char), MAX_TXT_FILE_SIZE, file_pointer); // NOTE: using fread for bitmaps to work
+        printf("[?] How many bytes would you like to read: ");
+        bytes_to_read = 0;
+        scanf(" %lu", &bytes_to_read);
+        // if (bytes_to_read > MAX_TXT_FILE_SIZE)
+        //   bytes_to_read = MAX_TXT_FILE_SIZE;
+        dynamic_file_data = malloc(bytes_to_read);
+        data_len = fread(dynamic_file_data, sizeof(char), bytes_to_read, file_pointer); // NOTE: using fread for bitmaps to work
         fclose(file_pointer);
-        if (antenna_write_rs(txt_file_data, data_len) < 0) {
+        if (antenna_write_rs(dynamic_file_data, data_len) < 0) {
           printf(
               "[!] failed to antenna write text file \"%s\" containing %d "
               "bytes\n",
@@ -158,6 +168,7 @@ int main(int argc, char *argv[]) {
           return -1;
         }
         skip_data_dump = 1;
+        free(dynamic_file_data);
         break;
 
       default:
