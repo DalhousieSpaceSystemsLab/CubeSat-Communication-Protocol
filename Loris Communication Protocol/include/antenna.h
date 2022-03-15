@@ -21,14 +21,25 @@
 #define UART_SPEED B9600
 #define UART_PARITY 0
 
+// Reed-solomon
+#define RS_BLOCK_LEN 255
+#define RS_DATA_LEN 234
+#define RS_NUM_ROOTS 2
+
 // Antenna
 #define MAX_TXT_FILE_SIZE 8191
 #define MAX_READ_LEN 256
-#define RS_BLOCK_LEN 255
-#define RS_DATA_LEN 234
+#define PACKET_DELIMITER "###"
+#define PACKET_DELIMITER_LEN 3
+#define PACKET_DATA_LEN RS_BLOCK_LEN
+#define PACKET_LEN PACKET_DATA_LEN + 2 * PACKET_DELIMITER_LEN
 
-// Reed-solomon
-#define RS_NUM_ROOTS 2
+// Packet struct
+struct antenna_packet {
+  char start_delimiter[PACKET_DELIMITER_LEN];
+  char data[PACKET_DATA_LEN];
+  char end_delimiter[PACKET_DELIMITER_LEN];
+};
 
 enum { READ_MODE_UPTO, READ_MODE_UNTIL };
 
