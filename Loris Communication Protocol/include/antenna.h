@@ -4,6 +4,9 @@
 // Feature macros
 #define _BSD_SOURCE
 
+// Project headers
+#include "antenna_packet.h"
+
 // Reed-solomon library
 #include "correct.h"
 
@@ -29,17 +32,6 @@
 // Antenna
 #define MAX_TXT_FILE_SIZE 8191
 #define MAX_READ_LEN 256
-#define PACKET_DELIMITER "###"
-#define PACKET_DELIMITER_LEN 3
-#define PACKET_DATA_LEN RS_BLOCK_LEN
-#define PACKET_LEN PACKET_DATA_LEN + 2 * PACKET_DELIMITER_LEN
-
-// Packet struct
-struct antenna_packet {
-  char start_delimiter[PACKET_DELIMITER_LEN];
-  char data[PACKET_DATA_LEN];
-  char end_delimiter[PACKET_DELIMITER_LEN];
-};
 
 enum { READ_MODE_UPTO, READ_MODE_UNTIL };
 

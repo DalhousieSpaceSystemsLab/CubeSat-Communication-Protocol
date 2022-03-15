@@ -65,6 +65,13 @@ int antenna_write(const char *data, size_t data_len) {
     return -1;
   }
 
+  // Prepare packet
+  struct antenna_packet p;
+  if (antenna_packet_new(&p) < 0) {
+    printf("[!] Failed to create new packet\n");
+    return -1;
+  }
+
   // Write bytes to antenna
   if (write(uartfd, data, data_len) < data_len) {
     printf("[!] Failed to send data of %d bytes in length.\n", data_len);
@@ -85,7 +92,7 @@ int antenna_write(const char *data, size_t data_len) {
 int antenna_write_rs(const char *data, size_t data_len) {
   // Return status
   int status = 0;
-  
+
   // Encode data
   int bytes_encoded = 0;
   correct_reed_solomon *encoder = correct_reed_solomon_create(
@@ -120,9 +127,9 @@ int antenna_write_rs(const char *data, size_t data_len) {
     bytes_encoded += bytes_to_encode;
   }
 
-  cleanup:
-    // Free encoder
-    correct_reed_solomon_destroy(encoder);
+cleanup:
+  // Free encoder
+  correct_reed_solomon_destroy(encoder);
 
   // done
   return status;
@@ -239,11 +246,13 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
     bytes_decoded += bytes_to_copy;
   } while (bytes_decoded < read_len && read_mode == READ_MODE_UNTIL);
 
-  cleanup:
-    // Free encoder
-    correct_reed_solomon_destroy(encoder);
+cleanup:
+  // Free encoder
+  correct_reed_solomon_destroy(encoder);
 
   // done
-  if(status) return status;
-  else return bytes_decoded;
+  if (status)
+    return status;
+  else
+    return bytes_decoded;
 }
