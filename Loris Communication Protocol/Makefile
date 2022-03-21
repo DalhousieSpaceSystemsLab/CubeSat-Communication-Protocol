@@ -3,11 +3,13 @@ INCLUDE=include
 SRCFOLDER=src
 SRC=${SRCFOLDER}/main.c
 SRC_TEST:=${wildcard ${SRCFOLDER}/antenna*.c}
-SRC_FIFO:=${wildcard ${SRCFOLDER}/fifo*.c}
+# SRC_FIFO:=${wildcard ${SRCFOLDER}/fifo*.c} 
+SRC_FIFO=${SRCFOLDER}/fifo.c ${SRCFOLDER}/fifo-emulation.c ${SRCFOLDER}/antenna.c ${SRCFOLDER}/antenna_packet.c
 TARGET=lcp
 TEST_TARGET=antenna_test
 FIFO_TARGET=fifo
 LIBCORRECT_BUILD_PATH=libcorrect/build-arm32
+LIBCORRECT_BUILD_PATH_VANILLA=libcorrect/build-x86
 
 all:
 	${CC} -o ${TARGET}.bin -I ${INCLUDE} ${SRC} -L. -l correct
@@ -17,10 +19,15 @@ correct:
 	cmake --build ${LIBCORRECT_BUILD_PATH}
 	cp ${LIBCORRECT_BUILD_PATH}/lib/libcorrect.a .
 
+correct-vanilla:
+	cmake -B ${LIBCORRECT_BUILD_PATH_VANILLA} -S libcorrect
+	cmake --build ${LIBCORRECT_BUILD_PATH_VANILLA}
+	cp ${LIBCORRECT_BUILD_PATH_VANILLA}/lib/libcorrect.a .
+
 test:
 	${CC} -o ${TEST_TARGET}.bin -I ${INCLUDE} ${SRC_TEST} -L. -l correct
 
-fifo:
+fifo: correct-vanilla
 	${CC} -o ${FIFO_TARGET}.bin -I ${INCLUDE} ${SRC_FIFO} -L. -l correct
 
 obc: correct test
