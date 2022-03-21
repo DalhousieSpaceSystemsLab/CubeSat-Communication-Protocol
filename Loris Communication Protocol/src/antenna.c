@@ -49,6 +49,32 @@ int antenna_init(const char *path) {
 }
 
 /**
+ * @brief Identical to antenna_write, but allows a custom file descriptor to be specified.
+ * 
+ * @param fd File descriptor to use.
+ * @param data Array of bytes to send.
+ * @param data_len Number of bytes from data to send.
+ * @return 0 on success, -1 on error
+ */
+int antenna_write_fd(int fd, const char* data, size_t data_len) {
+  // Prepare packet
+  struct antenna_packet p;
+  if (antenna_packet_new(&p) < 0) {
+    printf("[!] Failed to create new packet\n");
+    return -1;
+  }
+
+  // Write bytes to antenna
+  if (write(fd, data, data_len) < data_len) {
+    printf("[!] Failed to send data of %d bytes in length.\n", data_len);
+    return -1;
+  }
+
+  // done
+  return 0;
+}
+
+/**
  * @brief Writes bytes to the antenna.
  *
  * @param data Array of bytes to send.
@@ -65,31 +91,18 @@ int antenna_write(const char *data, size_t data_len) {
     return -1;
   }
 
-  // Prepare packet
-  struct antenna_packet p;
-  if (antenna_packet_new(&p) < 0) {
-    printf("[!] Failed to create new packet\n");
-    return -1;
-  }
-
-  // Write bytes to antenna
-  if (write(uartfd, data, data_len) < data_len) {
-    printf("[!] Failed to send data of %d bytes in length.\n", data_len);
-    return -1;
-  }
-
-  // done
-  return 0;
+  return antenna_write_fd(uartfd, data, data_len);
 }
 
 /**
- * @brief Writes bytes to the antenna with Reed-solomon FEC
+ * @brief Writes bytes to the antenna with Reed-solomon FEC but allows a custom file descriptor to be specified.
  *
+ * @param fd File descriptor to use.
  * @param data Array of bytes to send.
  * @param data_len Number of bytes from data to send.
  * @return 0 on success, -1 on error
  */
-int antenna_write_rs(const char *data, size_t data_len) {
+int antenna_write_rs_fd(int fd, const char* data, size_t data_len) {
   // Return status
   int status = 0;
 
@@ -117,7 +130,7 @@ int antenna_write_rs(const char *data, size_t data_len) {
     }
 
     // Send block
-    if (antenna_write(data_encoded, data_encoded_len) < 0) {
+    if (antenna_write_fd(fd, data_encoded, data_encoded_len) < 0) {
       printf("[!] Failed to send block of encoded data\n");
       status = -1;
       goto cleanup;
@@ -133,6 +146,61 @@ cleanup:
 
   // done
   return status;
+}
+
+/**
+ * @brief Writes bytes to the antenna with Reed-solomon FEC
+ *
+ * @param data Array of bytes to send.
+ * @param data_len Number of bytes from data to send.
+ * @return 0 on success, -1 on error
+ */
+int antenna_write_rs(const char *data, size_t data_len) {
+  return antenna_write_rs_fd(uartfd, data, data_len);
+}
+
+/**
+ * @brief Reads bytes from the antenna but allows a custom file descriptor to be specified. 
+ * Note that there are 2 ways to read:
+ * (1) Read UP TO read_len bytes,
+ * (2) Block until read_len bytes have been read.
+ *
+ * @param fd File descriptor to use.
+ * @param buffer Output buffer array for incoming bytes.
+ * @param read_len Read UP TO or block UNTIL this many bytes read.
+ * @param read_mode Set to READ_MODE_UPTO or READ_MODE_UNTIL
+ * @return number of bytes read or < 0 for error .
+ */
+int antenna_read_fd(int fd, char* buffer, size_t read_len, int read_mode) {
+  // Create placeholders for reading
+  size_t bytes_read = 0;
+
+  // Check read mode
+  if (read_mode == READ_MODE_UPTO) {
+    if ((bytes_read = read(uartfd, buffer, read_len)) < 0) {
+      printf("[!] Failed to read from uartfd\n");
+      return -1;
+    }
+  } else if (read_mode == READ_MODE_UNTIL) {
+    while (bytes_read < read_len) {
+      // Read bytes
+      int new_bytes_read = -1;
+      if ((new_bytes_read =
+               read(fd, &buffer[bytes_read], read_len - bytes_read)) < 0) {
+        printf("[!] Failed to read from fd\n");
+        return -1;
+      }
+
+      // Update bytes read so far
+      bytes_read += new_bytes_read;
+    }
+  } else {
+    printf("[!] Invalid read mode. Try READ_MODE_UPTO or READ_MODE_UNTIL\n");
+    return -1;
+  }
+
+  // done
+  return bytes_read;
 }
 
 /**
@@ -155,46 +223,19 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
     return -1;
   }
 
-  // Create placeholders for reading
-  size_t bytes_read = 0;
-
-  // Check read mode
-  if (read_mode == READ_MODE_UPTO) {
-    if ((bytes_read = read(uartfd, buffer, read_len)) < 0) {
-      printf("[!] Failed to read from uartfd\n");
-      return -1;
-    }
-  } else if (read_mode == READ_MODE_UNTIL) {
-    while (bytes_read < read_len) {
-      // Read bytes
-      int new_bytes_read = -1;
-      if ((new_bytes_read =
-               read(uartfd, &buffer[bytes_read], read_len - bytes_read)) < 0) {
-        printf("[!] Failed to read from uartfd\n");
-        return -1;
-      }
-
-      // Update bytes read so far
-      bytes_read += new_bytes_read;
-    }
-  } else {
-    printf("[!] Invalid read mode. Try READ_MODE_UPTO or READ_MODE_UNTIL\n");
-    return -1;
-  }
-
-  // done
-  return bytes_read;
+  return antenna_read_fd(uartfd, buffer, read_len, read_mode);
 }
 
 /**
- * @brief Reads Reed-solomon encoded bytes from the antenna.
+ * @brief Reads Reed-solomon encoded bytes from the antenna but allows a custom file descriptor to be specified. 
  *
+ * @param fd File descriptor to use.
  * @param buffer Output buffer array for incoming bytes.
  * @param read_len Read UP TO or block UNTIL this many bytes read.
  * @param read_mode Set to READ_MODE_UPTO or READ_MODE_UNTIL
  * @return number of bytes read or < 0 for error.
  */
-int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
+int antenna_read_rs_fd(int fd, char* buffer, size_t read_len, int read_mode) {
   // Return status
   int status = 0;
 
@@ -218,7 +259,7 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
 
     // Read block
     int bytes_read = -1;
-    if ((bytes_read = antenna_read(data_in, RS_BLOCK_LEN, read_mode)) < 0) {
+    if ((bytes_read = antenna_read_fd(fd, data_in, RS_BLOCK_LEN, read_mode)) < 0) {
       printf("[!] Failed to read encoded block from antenna\n");
       status = -1;
       goto cleanup;
@@ -255,4 +296,16 @@ cleanup:
     return status;
   else
     return bytes_decoded;
+}
+
+/**
+ * @brief Reads Reed-solomon encoded bytes from the antenna.
+ *
+ * @param buffer Output buffer array for incoming bytes.
+ * @param read_len Read UP TO or block UNTIL this many bytes read.
+ * @param read_mode Set to READ_MODE_UPTO or READ_MODE_UNTIL
+ * @return number of bytes read or < 0 for error.
+ */
+int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
+  return antenna_read_rs_fd(uartfd, buffer, read_len, read_mode);
 }

@@ -54,6 +54,16 @@ int antenna_init(const char* path);
 int antenna_write(const char* data, size_t data_len);
 
 /**
+ * @brief Identical to antenna_write, but allows a custom file descriptor to be specified.
+ * 
+ * @param fd File descriptor to use.
+ * @param data Array of bytes to send.
+ * @param data_len Number of bytes from data to send.
+ * @return 0 on success, -1 on error
+ */
+int antenna_write_fd(int fd, const char* data, size_t data_len);
+
+/**
  * @brief Writes bytes to the antenna with Reed-solomon FEC
  *
  * @param data Array of bytes to send.
@@ -61,6 +71,16 @@ int antenna_write(const char* data, size_t data_len);
  * @return 0 on success, -1 on error
  */
 int antenna_write_rs(const char* data, size_t data_len);
+
+/**
+ * @brief Writes bytes to the antenna with Reed-solomon FEC but allows a custom file descriptor to be specified.
+ *
+ * @param fd File descriptor to use.
+ * @param data Array of bytes to send.
+ * @param data_len Number of bytes from data to send.
+ * @return 0 on success, -1 on error
+ */
+int antenna_write_rs_fd(int fd, const char* data, size_t data_len);
 
 /**
  * @brief Reads bytes from the antenna.
@@ -76,6 +96,20 @@ int antenna_write_rs(const char* data, size_t data_len);
 int antenna_read(char* buffer, size_t read_len, int read_mode);
 
 /**
+ * @brief Reads bytes from the antenna but allows a custom file descriptor to be specified. 
+ * Note that there are 2 ways to read:
+ * (1) Read UP TO read_len bytes,
+ * (2) Block until read_len bytes have been read.
+ *
+ * @param fd File descriptor to use.
+ * @param buffer Output buffer array for incoming bytes.
+ * @param read_len Read UP TO or block UNTIL this many bytes read.
+ * @param read_mode Set to READ_MODE_UPTO or READ_MODE_UNTIL
+ * @return number of bytes read or < 0 for error .
+ */
+int antenna_read_fd(int fd, char* buffer, size_t read_len, int read_mode);
+
+/**
  * @brief Reads Reed-solomon encoded bytes from the antenna.
  *
  * @param buffer Output buffer array for incoming bytes.
@@ -84,5 +118,16 @@ int antenna_read(char* buffer, size_t read_len, int read_mode);
  * @return number of bytes read or < 0 for error.
  */
 int antenna_read_rs(char* buffer, size_t read_len, int read_mode);
+
+/**
+ * @brief Reads Reed-solomon encoded bytes from the antenna but allows a custom file descriptor to be specified. 
+ *
+ * @param fd File descriptor to use.
+ * @param buffer Output buffer array for incoming bytes.
+ * @param read_len Read UP TO or block UNTIL this many bytes read.
+ * @param read_mode Set to READ_MODE_UPTO or READ_MODE_UNTIL
+ * @return number of bytes read or < 0 for error.
+ */
+int antenna_read_rs_fd(int fd, char* buffer, size_t read_len, int read_mode);
 
 #endif
