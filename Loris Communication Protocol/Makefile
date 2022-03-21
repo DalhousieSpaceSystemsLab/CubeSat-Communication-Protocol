@@ -3,8 +3,10 @@ INCLUDE=include
 SRCFOLDER=src
 SRC=${SRCFOLDER}/main.c
 SRC_TEST:=${wildcard ${SRCFOLDER}/antenna*.c}
+SRC_FIFO:=${wildcard ${SRCFOLDER}/fifo*.c}
 TARGET=lcp
 TEST_TARGET=antenna_test
+FIFO_TARGET=fifo
 LIBCORRECT_BUILD_PATH=libcorrect/build-arm32
 
 all:
@@ -17,6 +19,9 @@ correct:
 
 test:
 	${CC} -o ${TEST_TARGET}.bin -I ${INCLUDE} ${SRC_TEST} -L. -l correct
+
+fifo:
+	${CC} -o ${FIFO_TARGET}.bin -I ${INCLUDE} ${SRC_FIFO} -L. -l correct
 
 obc: correct test
 	CC=arm-none-linux-gnueabihf-gcc
