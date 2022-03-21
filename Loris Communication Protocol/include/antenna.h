@@ -4,6 +4,9 @@
 // Feature macros
 #define _BSD_SOURCE
 
+// Project headers
+#include "antenna_packet.h"
+
 // Reed-solomon library
 #include "correct.h"
 
@@ -21,14 +24,14 @@
 #define UART_SPEED B9600
 #define UART_PARITY 0
 
+// Reed-solomon
+#define RS_BLOCK_LEN 255
+#define RS_DATA_LEN 234
+#define RS_NUM_ROOTS 2
+
 // Antenna
 #define MAX_TXT_FILE_SIZE 8191
 #define MAX_READ_LEN 256
-#define RS_BLOCK_LEN 255
-#define RS_DATA_LEN 234
-
-// Reed-solomon
-#define RS_NUM_ROOTS 2
 
 enum { READ_MODE_UPTO, READ_MODE_UNTIL };
 
