@@ -88,3 +88,21 @@ int fifo_read(char *data_out, size_t max_len) {
   // done
   return bytes_read;
 }
+
+/**
+ * @brief Returns the RX file descriptor.
+ * 
+ * @return rx file descriptor.
+ */
+int fifo_get_rx() {
+  return fifo_rx;
+}
+
+/**
+ * @brief Returns the TX file descriptor.
+ * 
+ * @return tx file descriptor.
+ */
+int fifo_get_tx() {
+  return fifo_tx;
+}

@@ -47,4 +47,18 @@ int fifo_write(char *data, size_t data_len);
  */
 int fifo_read(char *data_out, size_t max_len);
 
+/**
+ * @brief Returns the RX file descriptor.
+ * 
+ * @return rx file descriptor.
+ */
+int fifo_get_rx();
+
+/**
+ * @brief Returns the TX file descriptor.
+ * 
+ * @return tx file descriptor.
+ */
+int fifo_get_tx();
+
 #endif
