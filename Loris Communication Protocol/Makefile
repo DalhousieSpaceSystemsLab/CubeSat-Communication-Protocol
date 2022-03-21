@@ -20,8 +20,8 @@ test:
 
 obc: correct test
 	CC=arm-none-linux-gnueabihf-gcc
-	scp ${TEST_TARGET}.bin root@71.7.234.152:/home/root
+	scp ${TEST_TARGET}.bin root@173.212.68.129:/home/root
 
 obc2: correct test
 	CC=arm-none-linux-gnueabihf-gcc
-	scp -P 2222 ${TEST_TARGET}.bin root@71.7.234.152:/home/root
+	scp -P 2222 ${TEST_TARGET}.bin root@173.212.68.129:/home/root
