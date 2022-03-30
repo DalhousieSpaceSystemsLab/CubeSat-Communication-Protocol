@@ -35,7 +35,7 @@ int fifo_init(const int address, const char* path_rx, const char* path_tx) {
   }
 
   rx:
-    if(fifo_rx = open(path_rx, O_RDONLY) == -1) {
+    if((fifo_rx = open(path_rx, O_RDONLY)) == -1) {
       perror("failed to initialize fifo_rx");
       return -1;
     }
@@ -45,7 +45,7 @@ int fifo_init(const int address, const char* path_rx, const char* path_tx) {
     }
 
   tx:
-    if(fifo_tx = open(path_tx, O_WRONLY) == -1) {
+    if((fifo_tx = open(path_tx, O_WRONLY)) == -1) {
       perror("failed to initialize fifo_tx");
       return -1;
     }
@@ -55,6 +55,8 @@ int fifo_init(const int address, const char* path_rx, const char* path_tx) {
     }
 
   end:
+
+  printf("[Debug] And now fifo_rx = %d and fifo_tx = %d\n", fifo_rx, fifo_tx);
 
   // done
   return 0;
