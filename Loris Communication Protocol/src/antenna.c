@@ -177,13 +177,12 @@ int antenna_read_fd(int fd, char* buffer, size_t read_len, int read_mode) {
 
   // Check read mode
   if (read_mode == READ_MODE_UPTO) {
-    if ((bytes_read = read(uartfd, buffer, read_len)) < 0) {
+    if ((bytes_read = read(fd, buffer, read_len)) < 0) {
       if(errno == EAGAIN || errno == EWOULDBLOCK) {
         printf("[!] Would have blocked, all good though.\n");
         return 0;
       }
       printf("[!] Failed to read from uartfd\n");
-
       return -1;
     }
   } else if (read_mode == READ_MODE_UNTIL) {

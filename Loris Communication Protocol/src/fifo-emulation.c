@@ -24,12 +24,14 @@
 void * check_rx(void * data) {
   start:
     char incoming[MAX_MSG_LEN];
-    int bytes_read = antenna_read_fd(fifo_get_rx(), incoming, MAX_MSG_LEN, READ_MODE_UNTIL);
-    if(bytes_read < 0) {
+    int bytes_read = 0;
+    if((bytes_read = antenna_read_fd(fifo_get_rx(), incoming, MAX_MSG_LEN, READ_MODE_UPTO)) < 0) {
       printf("[!] Failed to read data from antenna\n");
       return NULL;
+    } else if(bytes_read == 0) {
+      goto start;
     } else {
-      printf("\r[*] Incoming message: %.*s\n", bytes_read, incoming);
+      printf("\r[*] Incoming message: %.*s\n\r>> ", bytes_read, incoming);
     }
   goto start;
 }
