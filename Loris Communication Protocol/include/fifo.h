@@ -22,12 +22,12 @@
 
 /**
  * @brief Initialize fifo module.
- * 
+ * @param address Desired address for this thread. Odd for tx first, even for rx first.
  * @param path_rx Path to the RX named pipe (relative to self).
  * @param path_tx Path to the TX named pipe (relative to self).
  * @return 0 = OK, -1 = ERR
  */
-int fifo_init(const char* path_rx, const char* path_tx);
+int fifo_init(const int address, const char* path_rx, const char* path_tx);
 
 /**
  * @brief Writes data to the fifo TX pipe.

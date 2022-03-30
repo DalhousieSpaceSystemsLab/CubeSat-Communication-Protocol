@@ -24,21 +24,37 @@ static int fifo_is_init() {
 
 /**
  * @brief Initialize fifo module.
- * 
+ * @param address Desired address for this thread. Odd for tx first, even for rx first.
  * @param path_rx Path to the RX named pipe (relative to self).
  * @param path_tx Path to the TX named pipe (relative to self).
  * @return 0 = OK, -1 = ERR
  */
-int fifo_init(const char* path_rx, const char* path_tx) {
-  if(fifo_rx = open(path_rx, O_RDONLY) == -1) {
-    perror("failed to initialize fifo_rx");
-    return -1;
+int fifo_init(const int address, const char* path_rx, const char* path_tx) {
+  if(address % 2 != 0) {
+    goto tx;
   }
 
-  if(fifo_tx = open(path_tx, O_WRONLY) == -1) {
-    perror("failed to initialize fifo_tx");
-    return -1;
-  }
+  rx:
+    if(fifo_rx = open(path_rx, O_RDONLY) == -1) {
+      perror("failed to initialize fifo_rx");
+      return -1;
+    }
+
+    if(address % 2 != 0) {
+      goto end;
+    }
+
+  tx:
+    if(fifo_tx = open(path_tx, O_WRONLY) == -1) {
+      perror("failed to initialize fifo_tx");
+      return -1;
+    }
+
+    if(address % 2 != 0) {
+      goto rx;
+    }
+
+  end:
 
   // done
   return 0;
