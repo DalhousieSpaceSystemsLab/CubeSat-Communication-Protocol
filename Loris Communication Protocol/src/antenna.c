@@ -183,6 +183,7 @@ int antenna_read_fd(int fd, char* buffer, size_t read_len, int read_mode) {
         return 0;
       }
       printf("[!] Failed to read from uartfd\n");
+
       return -1;
     }
   } else if (read_mode == READ_MODE_UNTIL) {

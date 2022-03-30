@@ -24,12 +24,9 @@
 void * check_rx(void * data) {
   start:
     char incoming[MAX_MSG_LEN];
-    printf("[?] fifo_get_rx() = %d\n", fifo_get_rx());
-    printf("[?] fifo_get_tx() = %d\n", fifo_get_tx());
-    int bytes_read = antenna_read_fd(fifo_get_rx(), incoming, MAX_MSG_LEN, READ_MODE_UPTO);
+    int bytes_read = antenna_read_fd(fifo_get_rx(), incoming, MAX_MSG_LEN, READ_MODE_UNTIL);
     if(bytes_read < 0) {
       printf("[!] Failed to read data from antenna\n");
-      for(int x = 0; x < 1000000; x++) {};
       return NULL;
     } else {
       printf("\r[*] Incoming message: %.*s\n", bytes_read, incoming);
@@ -51,9 +48,6 @@ int main(int argc, char *argv[]) {
     return -1;
   }
   printf("[DEBUG] Done!\n");
-
-  printf("[?] fifo_get_rx() = %d\n", fifo_get_rx());
-  printf("[?] fifo_get_tx() = %d\n", fifo_get_tx());
 
   // Start listening
   printf("[DEBUG] Start listening...\n");
