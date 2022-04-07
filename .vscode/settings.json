@@ -1,7 +1,5 @@
 {
   "files.associations": {
-    "csp.h": "c",
-    "csp_interface.h": "c"
-  },
-  "cmake.sourceDirectory": "${workspaceFolder}/Cubesat Space Protocol/UART transfer test/src"
+    "stdio.h": "c"
+  }
 }

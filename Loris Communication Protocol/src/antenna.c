@@ -313,3 +313,44 @@ cleanup:
 int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
   return antenna_read_rs_fd(uartfd, buffer, read_len, read_mode);
 }
+
+/**
+ * @brief Send file over the air.
+ * 
+ * @param fd File descriptor to use
+ * @param file_path Path to file to send.
+ * @return 0 on success, -1 on error
+ */
+int antenna_fwrite_fd(int fd, const char* file_path) {
+  // Designate status
+  int status = 0;
+  
+  // Get file size
+  struct stat st;
+  stat(file_path, &st);
+  size_t file_size = st.st_size;
+
+  // Open the file
+  FILE* f = fopen(file_path, "r");
+  if(f == NULL) {
+    printf("[!] Failed to open file to send\n");
+    return status;
+  }
+
+  // Read file into buffer and pass along to antenna
+  char buffer[FILE_BUFFER_SIZE];
+  int bytes_read = 0;
+  while((bytes_read = fread(buffer, sizeof(char), FILE_BUFFER_SIZE, f)) >= FILE_BUFFER_SIZE) {
+    if(antenna_write_fd(fd, buffer, bytes_read) == -1) {
+      printf("[!] Failed to write file data to antenna\n");
+      status = -1;
+      goto cleanup;
+    }
+  }
+
+  cleanup:
+    // Close the file
+    fclose(f);
+
+  return status;
+}

@@ -18,6 +18,7 @@
 #include <string.h>
 #include <termios.h>
 #include <unistd.h>
+#include <sys/stat.h>
 
 // Settings //
 // UART
@@ -32,6 +33,7 @@
 // Antenna
 #define MAX_TXT_FILE_SIZE 8191
 #define MAX_READ_LEN 256
+#define FILE_BUFFER_SIZE 255
 
 enum { READ_MODE_UPTO, READ_MODE_UNTIL };
 
@@ -129,5 +131,14 @@ int antenna_read_rs(char* buffer, size_t read_len, int read_mode);
  * @return number of bytes read or < 0 for error.
  */
 int antenna_read_rs_fd(int fd, char* buffer, size_t read_len, int read_mode);
+
+/**
+ * @brief Send file over the air.
+ * 
+ * @param fd File descriptor to use
+ * @param file_path Path to file to send.
+ * @return 0 on success, -1 on error
+ */
+int antenna_fwrite_fd(int fd, const char* file_path);
 
 #endif
