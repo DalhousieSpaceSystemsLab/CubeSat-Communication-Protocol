@@ -16,9 +16,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <termios.h>
 #include <unistd.h>
-#include <sys/stat.h>
 
 // Settings //
 // UART
@@ -34,6 +34,8 @@
 #define MAX_TXT_FILE_SIZE 8191
 #define MAX_READ_LEN 256
 #define FILE_BUFFER_SIZE 255
+#define FILE_NOTICE_FMT "F%u"
+#define FILE_NOTICE_LEN 16
 
 enum { READ_MODE_UPTO, READ_MODE_UNTIL };
 
@@ -56,8 +58,9 @@ int antenna_init(const char* path);
 int antenna_write(const char* data, size_t data_len);
 
 /**
- * @brief Identical to antenna_write, but allows a custom file descriptor to be specified.
- * 
+ * @brief Identical to antenna_write, but allows a custom file descriptor to be
+ * specified.
+ *
  * @param fd File descriptor to use.
  * @param data Array of bytes to send.
  * @param data_len Number of bytes from data to send.
@@ -75,7 +78,8 @@ int antenna_write_fd(int fd, const char* data, size_t data_len);
 int antenna_write_rs(const char* data, size_t data_len);
 
 /**
- * @brief Writes bytes to the antenna with Reed-solomon FEC but allows a custom file descriptor to be specified.
+ * @brief Writes bytes to the antenna with Reed-solomon FEC but allows a custom
+ * file descriptor to be specified.
  *
  * @param fd File descriptor to use.
  * @param data Array of bytes to send.
@@ -98,9 +102,8 @@ int antenna_write_rs_fd(int fd, const char* data, size_t data_len);
 int antenna_read(char* buffer, size_t read_len, int read_mode);
 
 /**
- * @brief Reads bytes from the antenna but allows a custom file descriptor to be specified. 
- * Note that there are 2 ways to read:
- * (1) Read UP TO read_len bytes,
+ * @brief Reads bytes from the antenna but allows a custom file descriptor to be
+ * specified. Note that there are 2 ways to read: (1) Read UP TO read_len bytes,
  * (2) Block until read_len bytes have been read.
  *
  * @param fd File descriptor to use.
@@ -122,7 +125,8 @@ int antenna_read_fd(int fd, char* buffer, size_t read_len, int read_mode);
 int antenna_read_rs(char* buffer, size_t read_len, int read_mode);
 
 /**
- * @brief Reads Reed-solomon encoded bytes from the antenna but allows a custom file descriptor to be specified. 
+ * @brief Reads Reed-solomon encoded bytes from the antenna but allows a custom
+ * file descriptor to be specified.
  *
  * @param fd File descriptor to use.
  * @param buffer Output buffer array for incoming bytes.
@@ -134,11 +138,20 @@ int antenna_read_rs_fd(int fd, char* buffer, size_t read_len, int read_mode);
 
 /**
  * @brief Send file over the air.
- * 
+ *
  * @param fd File descriptor to use
  * @param file_path Path to file to send.
  * @return 0 on success, -1 on error
  */
 int antenna_fwrite_fd(int fd, const char* file_path);
+
+/**
+ * @brief Receive file over the air.
+ *
+ * @param fd File descriptor to use
+ * @param file_path Path to incoming file destination
+ * @return 0 on success, -1 on error
+ */
+int antenna_fread_fd(int fd, const char* file_path);
 
 #endif

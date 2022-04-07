@@ -49,14 +49,15 @@ int antenna_init(const char *path) {
 }
 
 /**
- * @brief Identical to antenna_write, but allows a custom file descriptor to be specified.
- * 
+ * @brief Identical to antenna_write, but allows a custom file descriptor to be
+ * specified.
+ *
  * @param fd File descriptor to use.
  * @param data Array of bytes to send.
  * @param data_len Number of bytes from data to send.
  * @return 0 on success, -1 on error
  */
-int antenna_write_fd(int fd, const char* data, size_t data_len) {
+int antenna_write_fd(int fd, const char *data, size_t data_len) {
   // Prepare packet
   struct antenna_packet p;
   if (antenna_packet_new(&p) < 0) {
@@ -95,14 +96,15 @@ int antenna_write(const char *data, size_t data_len) {
 }
 
 /**
- * @brief Writes bytes to the antenna with Reed-solomon FEC but allows a custom file descriptor to be specified.
+ * @brief Writes bytes to the antenna with Reed-solomon FEC but allows a custom
+ * file descriptor to be specified.
  *
  * @param fd File descriptor to use.
  * @param data Array of bytes to send.
  * @param data_len Number of bytes from data to send.
  * @return 0 on success, -1 on error
  */
-int antenna_write_rs_fd(int fd, const char* data, size_t data_len) {
+int antenna_write_rs_fd(int fd, const char *data, size_t data_len) {
   // Return status
   int status = 0;
 
@@ -160,9 +162,8 @@ int antenna_write_rs(const char *data, size_t data_len) {
 }
 
 /**
- * @brief Reads bytes from the antenna but allows a custom file descriptor to be specified. 
- * Note that there are 2 ways to read:
- * (1) Read UP TO read_len bytes,
+ * @brief Reads bytes from the antenna but allows a custom file descriptor to be
+ * specified. Note that there are 2 ways to read: (1) Read UP TO read_len bytes,
  * (2) Block until read_len bytes have been read.
  *
  * @param fd File descriptor to use.
@@ -171,14 +172,14 @@ int antenna_write_rs(const char *data, size_t data_len) {
  * @param read_mode Set to READ_MODE_UPTO or READ_MODE_UNTIL
  * @return number of bytes read or < 0 for error .
  */
-int antenna_read_fd(int fd, char* buffer, size_t read_len, int read_mode) {
+int antenna_read_fd(int fd, char *buffer, size_t read_len, int read_mode) {
   // Create placeholders for reading
   size_t bytes_read = 0;
 
   // Check read mode
   if (read_mode == READ_MODE_UPTO) {
     if ((bytes_read = read(fd, buffer, read_len)) < 0) {
-      if(errno == EAGAIN || errno == EWOULDBLOCK) {
+      if (errno == EAGAIN || errno == EWOULDBLOCK) {
         printf("[!] Would have blocked, all good though.\n");
         return 0;
       }
@@ -231,7 +232,8 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
 }
 
 /**
- * @brief Reads Reed-solomon encoded bytes from the antenna but allows a custom file descriptor to be specified. 
+ * @brief Reads Reed-solomon encoded bytes from the antenna but allows a custom
+ * file descriptor to be specified.
  *
  * @param fd File descriptor to use.
  * @param buffer Output buffer array for incoming bytes.
@@ -239,7 +241,7 @@ int antenna_read(char *buffer, size_t read_len, int read_mode) {
  * @param read_mode Set to READ_MODE_UPTO or READ_MODE_UNTIL
  * @return number of bytes read or < 0 for error.
  */
-int antenna_read_rs_fd(int fd, char* buffer, size_t read_len, int read_mode) {
+int antenna_read_rs_fd(int fd, char *buffer, size_t read_len, int read_mode) {
   // Return status
   int status = 0;
 
@@ -263,7 +265,8 @@ int antenna_read_rs_fd(int fd, char* buffer, size_t read_len, int read_mode) {
 
     // Read block
     int bytes_read = -1;
-    if ((bytes_read = antenna_read_fd(fd, data_in, RS_BLOCK_LEN, read_mode)) < 0) {
+    if ((bytes_read = antenna_read_fd(fd, data_in, RS_BLOCK_LEN, read_mode)) <
+        0) {
       printf("[!] Failed to read encoded block from antenna\n");
       status = -1;
       goto cleanup;
@@ -316,41 +319,91 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
 
 /**
  * @brief Send file over the air.
- * 
+ *
  * @param fd File descriptor to use
  * @param file_path Path to file to send.
  * @return 0 on success, -1 on error
  */
-int antenna_fwrite_fd(int fd, const char* file_path) {
+int antenna_fwrite_fd(int fd, const char *file_path) {
   // Designate status
   int status = 0;
-  
+
   // Get file size
   struct stat st;
   stat(file_path, &st);
   size_t file_size = st.st_size;
 
   // Open the file
-  FILE* f = fopen(file_path, "r");
-  if(f == NULL) {
+  FILE *f = fopen(file_path, "r");
+  if (f == NULL) {
     printf("[!] Failed to open file to send\n");
     return status;
   }
 
+  // Send notice of incoming file to destination
+  char file_notice[FILE_NOTICE_LEN];
+  sprintf(file_notice, FILE_NOTICE_FMT, file_size);
+  antenna_write_fd(fd, file_notice, FILE_NOTICE_LEN);
+
   // Read file into buffer and pass along to antenna
   char buffer[FILE_BUFFER_SIZE];
   int bytes_read = 0;
-  while((bytes_read = fread(buffer, sizeof(char), FILE_BUFFER_SIZE, f)) >= FILE_BUFFER_SIZE) {
-    if(antenna_write_fd(fd, buffer, bytes_read) == -1) {
+  size_t total_bytes_read = 0;
+  while ((bytes_read = fread(buffer, sizeof(char), FILE_BUFFER_SIZE, f)) >=
+         FILE_BUFFER_SIZE) {
+    if (antenna_write_fd(fd, buffer, bytes_read) == -1) {
       printf("[!] Failed to write file data to antenna\n");
       status = -1;
       goto cleanup;
     }
+    total_bytes_read += bytes_read;
   }
 
-  cleanup:
-    // Close the file
-    fclose(f);
+cleanup:
+  // Close the file
+  fclose(f);
+
+  return status;
+}
+
+/**
+ * @brief Receive file over the air.
+ *
+ * @param fd File descriptor to use
+ * @param file_path Path to incoming file destination
+ * @return 0 on success, -1 on error
+ */
+int antenna_fread_fd(int fd, const char *file_path) {
+  int status = 0;
+
+  // Wait for file notice
+  size_t file_size = 0;
+  int ready = 0;
+  while (!ready) {
+    char notice[FILE_NOTICE_LEN];
+    if (antenna_read_fd(fd, notice, FILE_NOTICE_LEN, READ_MODE_UNTIL) == -1) {
+      printf("[!] Failed to read from antenna\n");
+      return -1;
+    }
+
+    // Check if file notice received
+    if (notice[0] == 'F') {
+      sscanf(notice, "F%u", &file_size);
+      ready = 1;
+    } else {
+      continue;
+    }
+  }
+
+  // Create file to store
+  FILE *fp = fopen(file_path, "w");
+  if (fp == NULL) {
+    printf("[!] Failed to open file placeholder for incoming file\n");
+    return -1;
+  }
+
+cleanup:
+  fclose(fp);
 
   return status;
 }
