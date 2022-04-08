@@ -25,7 +25,7 @@ correct-vanilla:
 	cp ${LIBCORRECT_BUILD_PATH_VANILLA}/lib/libcorrect.a .
 
 test:
-	${CC} -o ${TEST_TARGET}.bin -I ${INCLUDE} ${SRC_TEST} -L. -l correct
+	${CC} -o ${TEST_TARGET}.bin -I ${INCLUDE} ${SRC_TEST} -L. -lcorrect -lpthread
 
 fifo: correct-vanilla
 	gcc -g -o ${FIFO_TARGET}.bin -I ${INCLUDE} ${SRC_FIFO} -L. -l correct -l pthread
