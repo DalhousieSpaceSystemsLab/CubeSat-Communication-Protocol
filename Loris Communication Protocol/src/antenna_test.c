@@ -2,8 +2,19 @@
 #include "antenna.h"
 
 // Standard C libraries
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
+
+// Requests
+#define REQ_BASIC_TELEMETRY "A1"
+#define REQ_LARGE_TELEMETRY "B2"
+#define REQ_DELET_TELEMETRY "C3"
+#define REQ_REBOOT_OBC "D4"
+#define REQ_RESET_COMMS "E5"
+#define REQ_ENABLE_RAVEN "F6"
+
+void *monitor_requests(void *data);
 
 int main(int argc, char *argv[]) {
   // Check argc
@@ -33,6 +44,8 @@ int main(int argc, char *argv[]) {
     char txt_file_data[MAX_TXT_FILE_SIZE];
     char *dynamic_file_data = NULL;
     size_t bytes_to_read;
+
+    pthread_t monitor_requests_thread;
 
     printf(
         "[?] Read or write (r/w) or encoded (R/W) or receive text file (f) or "
@@ -178,7 +191,7 @@ int main(int argc, char *argv[]) {
       case 'x':
       case 'X':
         printf("[i] Entering autonomous mode...\n");
-
+        pthread_create(&monitor_requests_thread, NULL, monitor_requests, NULL);
         break;
 
       default:
@@ -205,4 +218,24 @@ int main(int argc, char *argv[]) {
 
   // done
   return 0;
+}
+
+void *monitor_requests(void *data) {
+start:
+  // Listen for incoming requests
+  char req[2];
+  if (antenna_read(req, 2, READ_MODE_UNTIL) == -1) {
+    printf("[!] Failed to read request from antenna\n");
+    goto start;
+  }
+
+  // Identify request
+  if (strcmp(req, REQ_BASIC_TELEMETRY) == 0) {
+    } else if (strcmp(req, REQ_LARGE_TELEMETRY) == 0) {
+  } else if (strcmp(req, REQ_DELET_TELEMETRY) == 0) {
+  } else if (strcmp(req, REQ_REBOOT_OBC) == 0) {
+  } else if (strcmp(req, REQ_RESET_COMMS) == 0) {
+  } else if (strcmp(req, REQ_ENABLE_RAVEN) == 0) {
+  }
+  goto start;
 }
