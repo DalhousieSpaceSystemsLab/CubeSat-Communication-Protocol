@@ -381,7 +381,7 @@ int antenna_fread_fd(int fd, const char *file_path) {
   int ready = 0;
   while (!ready) {
     char notice[FILE_NOTICE_LEN];
-    if (antenna_read_fd(fd, notice, FILE_NOTICE_LEN, READ_MODE_UNTIL) == -1) {
+    if (antenna_read_fd(fd, notice, FILE_NOTICE_LEN, READ_MODE_UPTO) == -1) {
       printf("[!] Failed to read from antenna\n");
       return -1;
     }
@@ -421,6 +421,8 @@ int antenna_fread_fd(int fd, const char *file_path) {
       printf("[*] Could not write any or full number of bytes to file. SKIPPING.\n");
       continue;
     }
+
+    total_bytes_read += bytes_read;
   }
 
 cleanup:
