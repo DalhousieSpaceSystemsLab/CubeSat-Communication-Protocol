@@ -390,6 +390,10 @@ int antenna_fread_fd(int fd, const char *file_path) {
     if (notice[0] == 'F') {
       sscanf(notice, "F%u", &file_size);
       ready = 1;
+
+      // DEBUG
+      printf("[i] File notice received! Incoming file size is %u bytes\n", file_size);
+
     } else {
       continue;
     }
@@ -400,6 +404,23 @@ int antenna_fread_fd(int fd, const char *file_path) {
   if (fp == NULL) {
     printf("[!] Failed to open file placeholder for incoming file\n");
     return -1;
+  }
+
+  // Write incoming data to file
+  char buffer[FILE_BUFFER_SIZE];
+  size_t total_bytes_read = 0;
+  while(total_bytes_read < file_size) {
+    int bytes_read = -1;
+    if((bytes_read = antenna_read_fd(fd, buffer, FILE_BUFFER_SIZE, READ_MODE_UPTO)) == -1) {
+      printf("[!] Failed to read data from the antenna\n");
+      status = -1;
+      goto cleanup;
+    }
+
+    if(fwrite(buffer, sizeof(char), bytes_read, fp) < bytes_read) {
+      printf("[*] Could not write any or full number of bytes to file. SKIPPING.\n");
+      continue;
+    }
   }
 
 cleanup:
