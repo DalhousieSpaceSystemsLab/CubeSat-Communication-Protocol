@@ -36,6 +36,15 @@ void * check_rx(void * data) {
   goto start;
 }
 
+void * check_rx_file(void * data) {
+  start:
+    if(antenna_fread_fd(fifo_get_rx(), "incoming.txt") == -1) {
+      printf("[!] Failed to fread file from antenna\n");
+      goto start;
+    }
+  goto start;
+}
+
 int main(int argc, char *argv[]) {
   // Check argc
   if(argc != 4) {
@@ -52,9 +61,14 @@ int main(int argc, char *argv[]) {
   printf("[DEBUG] Done!\n");
 
   // Start listening
-  printf("[DEBUG] Start listening...\n");
-  pthread_t rx_thread;
-  pthread_create(&rx_thread, NULL, check_rx, NULL);
+  // printf("[DEBUG] Start listening for messages...\n");
+  // pthread_t rx_thread;
+  // pthread_create(&rx_thread, NULL, check_rx, NULL);
+  // printf("[DEBUG] Done!\n");
+  
+  printf("[DEBUG] Start listening for files...\n");
+  pthread_t rx_file_thread;
+  pthread_create(&rx_file_thread, NULL, check_rx_file, NULL);
   printf("[DEBUG] Done!\n");
 
   for(;;) {
