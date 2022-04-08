@@ -30,6 +30,7 @@
 *.exe
 *.out
 *.app
+*.bin
 
 # CMake Cache Files
 /Linux Serial Ports/1. Master-send slave-receive/CMakeFiles/*
@@ -39,3 +40,4 @@
 /Linux Serial Ports/1. Master-send slave-receive/cmake_install.cmake
 
 build
+arm
