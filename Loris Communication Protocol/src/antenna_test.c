@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
     printf(
         "[?] Read or write (r/w) or encoded (R/W) or receive text file (f) or "
-        "send text file (F)");
+        "send text file (F) or autonomous mode (X)");
     scanf(" %c", &choice);
 
     switch (choice) {
@@ -169,6 +169,14 @@ int main(int argc, char *argv[]) {
         }
         skip_data_dump = 1;
         free(dynamic_file_data);
+        break;
+
+      case 'x':
+      case 'X':
+        printf("[i] Entering autonomous mode...\n");
+        while(1) {
+          
+        }
         break;
 
       default:
