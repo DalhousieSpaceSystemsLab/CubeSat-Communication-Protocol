@@ -28,7 +28,7 @@ test:
 	${CC} -o ${TEST_TARGET}.bin -I ${INCLUDE} ${SRC_TEST} -L. -l correct
 
 fifo: correct-vanilla
-	gcc -o ${FIFO_TARGET}.bin -I ${INCLUDE} ${SRC_FIFO} -L. -l correct -l pthread
+	gcc -g -o ${FIFO_TARGET}.bin -I ${INCLUDE} ${SRC_FIFO} -L. -l correct -l pthread
 
 obc: correct test
 	CC=arm-none-linux-gnueabihf-gcc

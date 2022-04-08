@@ -108,7 +108,9 @@ int main(int argc, char *argv[]) {
           return -1;
         }
         // fputs(txt_file_data, file_pointer);
-        fwrite(dynamic_file_data, sizeof(char), data_len, file_pointer); // NOTE: using fwrite for this to work with bitmaps
+        fwrite(
+            dynamic_file_data, sizeof(char), data_len,
+            file_pointer);  // NOTE: using fwrite for this to work with bitmaps
         fclose(file_pointer);
         printf("\n%s\n", dynamic_file_data);
         printf("[!] text file contents written to \"output.txt\"\n");
@@ -158,7 +160,9 @@ int main(int argc, char *argv[]) {
         // if (bytes_to_read > MAX_TXT_FILE_SIZE)
         //   bytes_to_read = MAX_TXT_FILE_SIZE;
         dynamic_file_data = malloc(bytes_to_read);
-        data_len = fread(dynamic_file_data, sizeof(char), bytes_to_read, file_pointer); // NOTE: using fread for bitmaps to work
+        data_len =
+            fread(dynamic_file_data, sizeof(char), bytes_to_read,
+                  file_pointer);  // NOTE: using fread for bitmaps to work
         fclose(file_pointer);
         if (antenna_write_rs(dynamic_file_data, data_len) < 0) {
           printf(
@@ -174,9 +178,7 @@ int main(int argc, char *argv[]) {
       case 'x':
       case 'X':
         printf("[i] Entering autonomous mode...\n");
-        while(1) {
-          
-        }
+
         break;
 
       default:
