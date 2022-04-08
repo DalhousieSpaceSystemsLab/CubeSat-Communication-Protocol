@@ -14,6 +14,9 @@
 #define REQ_RESET_COMMS "E5"
 #define REQ_ENABLE_RAVEN "F6"
 
+// Files
+#define FILE_BASIC_TELEMETRY "telemetry.txt"
+
 void *monitor_requests(void *data);
 
 int main(int argc, char *argv[]) {
@@ -221,9 +224,9 @@ int main(int argc, char *argv[]) {
 }
 
 void *monitor_requests(void *data) {
+  char req[2];
 start:
   // Listen for incoming requests
-  char req[2];
   if (antenna_read(req, 2, READ_MODE_UNTIL) == -1) {
     printf("[!] Failed to read request from antenna\n");
     goto start;
@@ -231,11 +234,18 @@ start:
 
   // Identify request
   if (strcmp(req, REQ_BASIC_TELEMETRY) == 0) {
-    } else if (strcmp(req, REQ_LARGE_TELEMETRY) == 0) {
+    // Send telemetry file
+    if (antenna_fwrite(FILE_BASIC_TELEMETRY) == -1) {
+      printf("[!] Failed to send telemetry file to fulfill request\n");
+      goto start;
+    }
+  } else if (strcmp(req, REQ_LARGE_TELEMETRY) == 0) {
   } else if (strcmp(req, REQ_DELET_TELEMETRY) == 0) {
   } else if (strcmp(req, REQ_REBOOT_OBC) == 0) {
   } else if (strcmp(req, REQ_RESET_COMMS) == 0) {
   } else if (strcmp(req, REQ_ENABLE_RAVEN) == 0) {
+  } else {
+    printf("[:/] Could not process request [%c%c]\n", req[0], req[1]);
   }
   goto start;
 }
