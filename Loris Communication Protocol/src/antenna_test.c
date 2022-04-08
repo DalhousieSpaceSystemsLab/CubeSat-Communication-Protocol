@@ -1,5 +1,6 @@
 // Project headers
 #include "antenna.h"
+#include "fifo.h"
 
 // Standard C libraries
 #include <pthread.h>
@@ -16,6 +17,7 @@
 
 // Files
 #define FILE_BASIC_TELEMETRY "telemetry.txt"
+#define FILE_INCOMING "incoming.txt"
 
 void *monitor_requests(void *data);
 
@@ -52,7 +54,8 @@ int main(int argc, char *argv[]) {
 
     printf(
         "[?] Read or write (r/w) or encoded (R/W) or receive text file (f) or "
-        "send text file (F) or autonomous mode (X)");
+        "send text file (F) or autonomous mode (X) or start the groundstation "
+        "daemon (Z)");
     scanf(" %c", &choice);
 
     switch (choice) {
@@ -104,36 +107,6 @@ int main(int argc, char *argv[]) {
           }
         }
         break;
-      // messy. move contents to a function.
-      case 'f':
-        file_pointer = fopen("output.txt", "w");
-        if (file_pointer == NULL) {
-          printf("[!] failed to open file \"output.txt\"\n");
-          return -1;
-        }
-        printf("[?] How many bytes would you like to read: ");
-        bytes_to_read = 0;
-        scanf(" %lu", &bytes_to_read);
-        // if (bytes_to_read > MAX_TXT_FILE_SIZE)
-        //   bytes_to_read = MAX_TXT_FILE_SIZE;
-        dynamic_file_data = malloc(bytes_to_read);
-        printf("[!] Reading text file...\n");
-        if ((data_len = antenna_read_rs(dynamic_file_data, bytes_to_read,
-                                        READ_MODE_UNTIL)) < 0) {
-          printf("[!] failed to antenna read upto %d bytes\n", choice_len);
-          return -1;
-        }
-        // fputs(txt_file_data, file_pointer);
-        fwrite(
-            dynamic_file_data, sizeof(char), data_len,
-            file_pointer);  // NOTE: using fwrite for this to work with bitmaps
-        fclose(file_pointer);
-        printf("\n%s\n", dynamic_file_data);
-        printf("[!] text file contents written to \"output.txt\"\n");
-        skip_data_dump = 1;
-        free(dynamic_file_data);
-        break;
-
       case 'w':
         printf("[?] Enter message to send: ");
         scanf(" %s", data);
@@ -156,45 +129,64 @@ int main(int argc, char *argv[]) {
         break;
 
       // messy. move contents to a function.
+      case 'f':
       case 'F':
-        // fileName must be <20 characters in length.
-        printf("[?] Enter text file to send unencoded: ");
-        // hardcoding a designated filename would make repeated testing faster.
-        scanf("%s", file_name);
-        file_pointer = fopen(file_name, "r");
-        if (file_pointer == NULL) {
-          printf("[!] failed to open file \"%s\"\n", file_name);
-          return -1;
+        printf("[?] Enter the request you would like to make: ");
+        int req = -1;
+        scanf(" %d", &req);
+
+        switch (req) {
+          case 1:
+            if (antenna_write(REQ_BASIC_TELEMETRY, 2) == -1) {
+              printf("[!] Failed to make request\n");
+              continue;
+            }
+
+            if (antenna_fread(FILE_INCOMING) == -1) {
+              printf("[!] failed to fread incoming file\n");
+              continue;
+            }
+
+            break;
         }
-        // while (fgets(data, MAX_READ_LEN, file_pointer)) {
-        //   strcat(txt_file_data, data);
-        // }
-        // data_len = strlen(txt_file_data);
-        printf("[?] How many bytes would you like to read: ");
-        bytes_to_read = 0;
-        scanf(" %lu", &bytes_to_read);
-        // if (bytes_to_read > MAX_TXT_FILE_SIZE)
-        //   bytes_to_read = MAX_TXT_FILE_SIZE;
-        dynamic_file_data = malloc(bytes_to_read);
-        data_len =
-            fread(dynamic_file_data, sizeof(char), bytes_to_read,
-                  file_pointer);  // NOTE: using fread for bitmaps to work
-        fclose(file_pointer);
-        if (antenna_write_rs(dynamic_file_data, data_len) < 0) {
-          printf(
-              "[!] failed to antenna write text file \"%s\" containing %d "
-              "bytes\n",
-              file_name, data_len);
-          return -1;
-        }
-        skip_data_dump = 1;
-        free(dynamic_file_data);
+
         break;
 
       case 'x':
       case 'X':
         printf("[i] Entering autonomous mode...\n");
-        pthread_create(&monitor_requests_thread, NULL, monitor_requests, NULL);
+        char userreq[2];
+        for (;;) {
+          // Listen for incoming requests
+          if (antenna_read(userreq, 2, READ_MODE_UNTIL) == -1) {
+            printf("[!] Failed to read request from antenna\n");
+            continue;
+          }
+
+          // Identify request
+          if (strcmp(userreq, REQ_BASIC_TELEMETRY) == 0) {
+            // Send telemetry file
+            printf("[i] Basic telemetry request received!\n");
+            if (antenna_fwrite(FILE_BASIC_TELEMETRY) == -1) {
+              printf("[!] Failed to send telemetry file to fulfill request\n");
+              continue;
+            }
+          } else if (strcmp(userreq, REQ_LARGE_TELEMETRY) == 0) {
+          } else if (strcmp(userreq, REQ_DELET_TELEMETRY) == 0) {
+          } else if (strcmp(userreq, REQ_REBOOT_OBC) == 0) {
+          } else if (strcmp(userreq, REQ_RESET_COMMS) == 0) {
+          } else if (strcmp(userreq, REQ_ENABLE_RAVEN) == 0) {
+          } else {
+            printf("[:/] Could not process request [%c%c]\n", userreq[0],
+                   userreq[1]);
+          }
+        }
+        break;
+
+      case 'z':
+      case 'Z':
+        printf("Starting the groundstation FIFO daemon...\n");
+        // fifo_init(1, )
         break;
 
       default:
@@ -235,6 +227,7 @@ start:
   // Identify request
   if (strcmp(req, REQ_BASIC_TELEMETRY) == 0) {
     // Send telemetry file
+    printf("[i] Basic telemetry request received!\n");
     if (antenna_fwrite(FILE_BASIC_TELEMETRY) == -1) {
       printf("[!] Failed to send telemetry file to fulfill request\n");
       goto start;
