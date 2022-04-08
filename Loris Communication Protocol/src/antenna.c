@@ -314,6 +314,14 @@ cleanup:
  * @return number of bytes read or < 0 for error.
  */
 int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
+  // Make sure file desc initialized
+  if (uartfd == -1) {
+    printf(
+        "[!] Cannot read to unitialized fd. Make sure to run antenna_init() "
+        "first\n");
+    return -1;
+  }
+
   return antenna_read_rs_fd(uartfd, buffer, read_len, read_mode);
 }
 
@@ -364,6 +372,24 @@ cleanup:
   fclose(f);
 
   return status;
+}
+
+/**
+ * @brief Send file over the air.
+ *
+ * @param file_path Path to file to send.
+ * @return 0 on success, -1 on error
+ */
+int antenna_fwrite(int fd, const char *file_path) {
+  // Make sure file desc initialized
+  if (uartfd == -1) {
+    printf(
+        "[!] Cannot read to unitialized fd. Make sure to run antenna_init() "
+        "first\n");
+    return -1;
+  }
+
+  return antenna_fwrite_fd(uartfd, file_path);
 }
 
 /**
@@ -439,4 +465,22 @@ cleanup:
   fclose(fp);
 
   return status;
+}
+
+/**
+ * @brief Receive file over the air.
+ *
+ * @param file_path Path to incoming file destination
+ * @return 0 on success, -1 on error
+ */
+int antenna_fread(int fd, const char *file_path) {
+  // Make sure file desc initialized
+  if (uartfd == -1) {
+    printf(
+        "[!] Cannot read to unitialized fd. Make sure to run antenna_init() "
+        "first\n");
+    return -1;
+  }
+
+  return antenna_fread_fd(uartfd, file_path);
 }
