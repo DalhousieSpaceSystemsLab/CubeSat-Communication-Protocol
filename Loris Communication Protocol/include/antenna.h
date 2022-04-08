@@ -142,7 +142,7 @@ int antenna_read_rs_fd(int fd, char* buffer, size_t read_len, int read_mode);
  * @param file_path Path to file to send.
  * @return 0 on success, -1 on error
  */
-int antenna_fwrite(int fd, const char* file_path);
+int antenna_fwrite(const char* file_path);
 
 /**
  * @brief Send file over the air but allows a custom
@@ -160,7 +160,7 @@ int antenna_fwrite_fd(int fd, const char* file_path);
  * @param file_path Path to incoming file destination
  * @return 0 on success, -1 on error
  */
-int antenna_fread(int fd, const char* file_path);
+int antenna_fread(const char* file_path);
 
 /**
  * @brief Receive file over the air but allows a custom

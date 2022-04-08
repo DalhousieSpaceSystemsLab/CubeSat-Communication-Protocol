@@ -380,7 +380,7 @@ cleanup:
  * @param file_path Path to file to send.
  * @return 0 on success, -1 on error
  */
-int antenna_fwrite(int fd, const char *file_path) {
+int antenna_fwrite(const char *file_path) {
   // Make sure file desc initialized
   if (uartfd == -1) {
     printf(
@@ -473,7 +473,7 @@ cleanup:
  * @param file_path Path to incoming file destination
  * @return 0 on success, -1 on error
  */
-int antenna_fread(int fd, const char *file_path) {
+int antenna_fread(const char *file_path) {
   // Make sure file desc initialized
   if (uartfd == -1) {
     printf(
