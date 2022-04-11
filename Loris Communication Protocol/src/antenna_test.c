@@ -157,7 +157,8 @@ int main(int argc, char *argv[]) {
 
           // Ask user to file to send
           printf("[?] Enter the path of the file you'd like to send: ");
-          fgets(file_path, 256, stdin);
+          // fgets(file_path, 256, stdin);
+          scanf(" %s", file_path);
 
           // Send file
           if (antenna_fwrite(file_path) == -1) {
@@ -194,7 +195,8 @@ int main(int argc, char *argv[]) {
 
           // Ask user to file to send
           printf("[?] Enter the path of the file you'd like to send: ");
-          fgets(file_path, 256, stdin);
+          // fgets(file_path, 256, stdin);
+          scanf(" %s", file_path);
 
           // Send file
           if (antenna_fwrite_rs(file_path) == -1) {
@@ -213,6 +215,7 @@ int main(int argc, char *argv[]) {
 
         for (;;) {
           // Listen for incoming requests
+          printf("[*] Awaiting next request...");
           if (antenna_read(userreq, 2, READ_MODE_UNTIL) == -1) {
             printf("[!] Failed to read request from antenna\n");
             continue;
@@ -232,7 +235,6 @@ int main(int argc, char *argv[]) {
           } else if (strcmp(userreq, REQ_RESET_COMMS) == 0) {
           } else if (strcmp(userreq, REQ_ENABLE_RAVEN) == 0) {
           } else if (strcmp(userreq, REQ_FWD_COMMAND) == 0) {
-          } else if (strcmp(userreq, REQ_LISTEN_FILE) == 0) {
           } else if (strcmp(userreq, REQ_LISTEN_FILE) == 0) {
             // Listen for incoming file
             printf("[i] File listen request received!\n");
