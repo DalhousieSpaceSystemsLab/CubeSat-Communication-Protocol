@@ -52,6 +52,8 @@ int main(int argc, char *argv[]) {
     size_t bytes_to_read;
 
     pthread_t monitor_requests_thread;
+    int req = -1;
+    char userreq[2];
 
     printf(
         "[?] Read or write (r/w) or encoded (R/W) or receive text file (f) or "
@@ -131,9 +133,8 @@ int main(int argc, char *argv[]) {
 
       // messy. move contents to a function.
       case 'f':
-      case 'F':
-        printf("[?] Enter the request you would like to make: ");
-        int req = -1;
+        printf("[?] Enter the PLAINTEXT request you would like to make: ");
+
         scanf(" %d", &req);
 
         switch (req) {
@@ -152,11 +153,31 @@ int main(int argc, char *argv[]) {
         }
 
         break;
+      case 'F':
+        printf("[?] Enter the ENCODED request you would like to make: ");
+
+        scanf(" %d", &req);
+
+        switch (req) {
+          case 1:
+            if (antenna_write_rs(REQ_BASIC_TELEMETRY, 2) == -1) {
+              printf("[!] Failed to make request\n");
+              continue;
+            }
+
+            if (antenna_fread_rs(FILE_INCOMING) == -1) {
+              printf("[!] failed to fread incoming file\n");
+              continue;
+            }
+
+            break;
+        }
+
+        break;
 
       case 'x':
-      case 'X':
-        printf("[i] Entering autonomous mode...\n");
-        char userreq[2];
+        printf("[i] Entering autonomous PLAINTEXT mode...\n");
+
         for (;;) {
           // Listen for incoming requests
           if (antenna_read(userreq, 2, READ_MODE_UNTIL) == -1) {
@@ -169,6 +190,36 @@ int main(int argc, char *argv[]) {
             // Send telemetry file
             printf("[i] Basic telemetry request received!\n");
             if (antenna_fwrite(FILE_BASIC_TELEMETRY) == -1) {
+              printf("[!] Failed to send telemetry file to fulfill request\n");
+              continue;
+            }
+          } else if (strcmp(userreq, REQ_LARGE_TELEMETRY) == 0) {
+          } else if (strcmp(userreq, REQ_DELET_TELEMETRY) == 0) {
+          } else if (strcmp(userreq, REQ_REBOOT_OBC) == 0) {
+          } else if (strcmp(userreq, REQ_RESET_COMMS) == 0) {
+          } else if (strcmp(userreq, REQ_ENABLE_RAVEN) == 0) {
+          } else if (strcmp(userreq, REQ_FWD_COMMAND) == 0) {
+          } else {
+            printf("[:/] Could not process request [%c%c]\n", userreq[0],
+                   userreq[1]);
+          }
+        }
+        break;
+      case 'X':
+        printf("[i] Entering autonomous ENCODED mode...\n");
+
+        for (;;) {
+          // Listen for incoming requests
+          if (antenna_read_rs(userreq, 2, READ_MODE_UNTIL) == -1) {
+            printf("[!] Failed to read request from antenna\n");
+            continue;
+          }
+
+          // Identify request
+          if (strcmp(userreq, REQ_BASIC_TELEMETRY) == 0) {
+            // Send telemetry file
+            printf("[i] Basic telemetry request received!\n");
+            if (antenna_fwrite_rs(FILE_BASIC_TELEMETRY) == -1) {
               printf("[!] Failed to send telemetry file to fulfill request\n");
               continue;
             }
