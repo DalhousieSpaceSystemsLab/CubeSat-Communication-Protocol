@@ -22,9 +22,9 @@
 #define MAX_MSG_LEN 256
 
 void *check_rx(void *data) {
-start:
   char incoming[MAX_MSG_LEN];
   int bytes_read = 0;
+start:
   if ((bytes_read = antenna_read_fd(fifo_get_rx(), incoming, MAX_MSG_LEN,
                                     READ_MODE_UPTO)) < 0) {
     printf("[!] Failed to read data from antenna\n");
