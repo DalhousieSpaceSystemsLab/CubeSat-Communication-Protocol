@@ -192,4 +192,22 @@ int antenna_fread(const char* file_path);
  */
 int antenna_fread_fd(int fd, const char* file_path);
 
+/**
+ * @brief Receive file over the air using FEC.
+ *
+ * @param file_path Path to incoming file destination
+ * @return 0 on success, -1 on error
+ */
+int antenna_fread_rs(const char* file_path);
+
+/**
+ * @brief Receive file over the air using FEC but allows a custom
+ * file descriptor to be specified.
+ *
+ * @param fd File descriptor to use
+ * @param file_path Path to incoming file destination
+ * @return 0 on success, -1 on error
+ */
+int antenna_fread_rs_fd(int fd, const char* file_path);
+
 #endif

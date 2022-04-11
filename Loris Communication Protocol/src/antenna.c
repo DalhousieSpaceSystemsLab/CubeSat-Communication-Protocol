@@ -443,14 +443,7 @@ int antenna_fwrite_rs(const char *file_path) {
   return antenna_fwrite_rs_fd(uartfd, file_path);
 }
 
-/**
- * @brief Receive file over the air.
- *
- * @param fd File descriptor to use
- * @param file_path Path to incoming file destination
- * @return 0 on success, -1 on error
- */
-int antenna_fread_fd(int fd, const char *file_path) {
+static int _antenna_fread_fd(int antenna_mode, int fd, const char *file_path) {
   int status = 0;
 
   // Wait for file notice
@@ -458,9 +451,17 @@ int antenna_fread_fd(int fd, const char *file_path) {
   int ready = 0;
   while (!ready) {
     char notice[FILE_NOTICE_LEN];
-    if (antenna_read_fd(fd, notice, FILE_NOTICE_LEN, READ_MODE_UPTO) == -1) {
-      printf("[!] Failed to read from antenna\n");
-      return -1;
+    if (antenna_mode == ANTENNA_ENCODE_RS) {
+      if (antenna_read_rs_fd(fd, notice, FILE_NOTICE_LEN, READ_MODE_UPTO) ==
+          -1) {
+        printf("[!] Failed to read from antenna\n");
+        return -1;
+      }
+    } else {
+      if (antenna_read_fd(fd, notice, FILE_NOTICE_LEN, READ_MODE_UPTO) == -1) {
+        printf("[!] Failed to read from antenna\n");
+        return -1;
+      }
     }
 
     // Check if file notice received
@@ -488,21 +489,38 @@ int antenna_fread_fd(int fd, const char *file_path) {
 
   // Write incoming data to file
   char buffer[FILE_BUFFER_SIZE];
+  char buffer_rs[RS_DATA_LEN];
   size_t total_bytes_read = 0;
+  int bytes_read = -1;
   while (total_bytes_read < file_size) {
-    int bytes_read = -1;
-    if ((bytes_read = antenna_read_fd(fd, buffer, FILE_BUFFER_SIZE,
-                                      READ_MODE_UPTO)) == -1) {
-      printf("[!] Failed to read data from the antenna\n");
-      status = -1;
-      goto cleanup;
-    }
+    if (antenna_mode == ANTENNA_ENCODE_RS) {
+      if ((bytes_read = antenna_read_rs_fd(fd, buffer_rs, FILE_BUFFER_SIZE,
+                                           READ_MODE_UPTO)) == -1) {
+        printf("[!] Failed to read data from the antenna\n");
+        status = -1;
+        goto cleanup;
+      }
 
-    if (fwrite(buffer, sizeof(char), bytes_read, fp) < bytes_read) {
-      printf(
-          "[*] Could not write any or full number of bytes to file. "
-          "SKIPPING.\n");
-      continue;
+      if (fwrite(buffer_rs, sizeof(char), bytes_read, fp) < bytes_read) {
+        printf(
+            "[*] Could not write any or full number of bytes to file. "
+            "SKIPPING.\n");
+        continue;
+      }
+    } else {
+      if ((bytes_read = antenna_read_fd(fd, buffer, FILE_BUFFER_SIZE,
+                                        READ_MODE_UPTO)) == -1) {
+        printf("[!] Failed to read data from the antenna\n");
+        status = -1;
+        goto cleanup;
+      }
+
+      if (fwrite(buffer, sizeof(char), bytes_read, fp) < bytes_read) {
+        printf(
+            "[*] Could not write any or full number of bytes to file. "
+            "SKIPPING.\n");
+        continue;
+      }
     }
 
     total_bytes_read += bytes_read;
@@ -521,6 +539,17 @@ cleanup:
 /**
  * @brief Receive file over the air.
  *
+ * @param fd File descriptor to use
+ * @param file_path Path to incoming file destination
+ * @return 0 on success, -1 on error
+ */
+int antenna_fread_fd(int fd, const char *file_path) {
+  return _antenna_fread_fd(ANTENNA_ENCODE_NONE, fd, file_path);
+}
+
+/**
+ * @brief Receive file over the air.
+ *
  * @param file_path Path to incoming file destination
  * @return 0 on success, -1 on error
  */
@@ -534,4 +563,34 @@ int antenna_fread(const char *file_path) {
   }
 
   return antenna_fread_fd(uartfd, file_path);
+}
+
+/**
+ * @brief Receive file over the air using FEC.
+ *
+ * @param file_path Path to incoming file destination
+ * @return 0 on success, -1 on error
+ */
+int antenna_fread_rs(const char *file_path) {
+  // Make sure file desc initialized
+  if (uartfd == -1) {
+    printf(
+        "[!] Cannot read to unitialized fd. Make sure to run antenna_init() "
+        "first\n");
+    return -1;
+  }
+
+  return antenna_fread_rs_fd(uartfd, file_path);
+}
+
+/**
+ * @brief Receive file over the air using FEC but allows a custom
+ * file descriptor to be specified.
+ *
+ * @param fd File descriptor to use
+ * @param file_path Path to incoming file destination
+ * @return 0 on success, -1 on error
+ */
+int antenna_fread_rs_fd(int fd, const char *file_path) {
+  return _antenna_fread_fd(ANTENNA_ENCODE_RS, fd, file_path);
 }
