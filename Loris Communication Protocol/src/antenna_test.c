@@ -135,42 +135,74 @@ int main(int argc, char *argv[]) {
       case 'f':
         printf("[?] Enter the PLAINTEXT request you would like to make: ");
 
-        scanf(" %d", &req);
+        scanf(" %s", req);
 
-        switch (req) {
-          case 1:
-            if (antenna_write(REQ_BASIC_TELEMETRY, 2) == -1) {
-              printf("[!] Failed to make request\n");
-              continue;
-            }
+        if (strcmp(req, REQ_BASIC_TELEMETRY) == 0) {
+          if (antenna_write(REQ_BASIC_TELEMETRY, 2) == -1) {
+            printf("[!] Failed to make request\n");
+            continue;
+          }
 
-            if (antenna_fread(FILE_INCOMING) == -1) {
-              printf("[!] failed to fread incoming file\n");
-              continue;
-            }
+          if (antenna_fread(FILE_INCOMING) == -1) {
+            printf("[!] failed to fread incoming file\n");
+            continue;
+          }
+        } else if (strcmp(req, REQ_LISTEN_FILE) == 0) {
+          // Make request
+          if (antenna_write(REQ_LISTEN_FILE, 2) == -1) {
+            printf("[!] Failed to make request\n");
+            continue;
+          }
 
-            break;
+          // Ask user to file to send
+          printf("[?] Enter the path of the file you'd like to send: ");
+          fgets(file_path, 256, stdin);
+
+          // Send file
+          if (antenna_fwrite(file_path) == -1) {
+            printf("[!] Failed to send plaintext file over the antenna\n");
+            continue;
+          }
+        } else {
+          printf("[!] {%c%c} is not a recognized request\n", req[0], req[1]);
+          break;
         }
 
         break;
       case 'F':
         printf("[?] Enter the ENCODED request you would like to make: ");
 
-        scanf(" %d", &req);
+        scanf(" %s", req);
 
-        switch (req) {
-          case 1:
-            if (antenna_write_rs(REQ_BASIC_TELEMETRY, 2) == -1) {
-              printf("[!] Failed to make request\n");
-              continue;
-            }
+        if (strcmp(req, REQ_BASIC_TELEMETRY) == 0) {
+          if (antenna_write_rs(REQ_BASIC_TELEMETRY, 2) == -1) {
+            printf("[!] Failed to make request\n");
+            continue;
+          }
 
-            if (antenna_fread_rs(FILE_INCOMING) == -1) {
-              printf("[!] failed to fread incoming file\n");
-              continue;
-            }
+          if (antenna_fread_rs(FILE_INCOMING) == -1) {
+            printf("[!] failed to fread incoming file\n");
+            continue;
+          }
+        } else if (strcmp(req, REQ_LISTEN_FILE) == 0) {
+          // Make request
+          if (antenna_write_rs(REQ_LISTEN_FILE, 2) == -1) {
+            printf("[!] Failed to make request\n");
+            continue;
+          }
 
-            break;
+          // Ask user to file to send
+          printf("[?] Enter the path of the file you'd like to send: ");
+          fgets(file_path, 256, stdin);
+
+          // Send file
+          if (antenna_fwrite_rs(file_path) == -1) {
+            printf("[!] Failed to send plaintext file over the antenna\n");
+            continue;
+          }
+        } else {
+          printf("[!] {%c%c} is not a recognized request\n", req[0], req[1]);
+          break;
         }
 
         break;
