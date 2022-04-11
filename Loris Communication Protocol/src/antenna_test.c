@@ -14,6 +14,7 @@
 #define REQ_REBOOT_OBC "D4"
 #define REQ_RESET_COMMS "E5"
 #define REQ_ENABLE_RAVEN "F6"
+#define REQ_FWD_COMMAND "CC"
 
 // Files
 #define FILE_BASIC_TELEMETRY "telemetry.txt"
@@ -176,6 +177,7 @@ int main(int argc, char *argv[]) {
           } else if (strcmp(userreq, REQ_REBOOT_OBC) == 0) {
           } else if (strcmp(userreq, REQ_RESET_COMMS) == 0) {
           } else if (strcmp(userreq, REQ_ENABLE_RAVEN) == 0) {
+          } else if (strcmp(userreq, REQ_FWD_COMMAND) == 0) {
           } else {
             printf("[:/] Could not process request [%c%c]\n", userreq[0],
                    userreq[1]);
