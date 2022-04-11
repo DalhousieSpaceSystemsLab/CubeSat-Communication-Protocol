@@ -15,6 +15,7 @@
 #define REQ_RESET_COMMS "E5"
 #define REQ_ENABLE_RAVEN "F6"
 #define REQ_FWD_COMMAND "CC"
+#define REQ_LISTEN_FILE "FF"
 
 // Files
 #define FILE_BASIC_TELEMETRY "telemetry.txt"
@@ -231,6 +232,14 @@ int main(int argc, char *argv[]) {
           } else if (strcmp(userreq, REQ_RESET_COMMS) == 0) {
           } else if (strcmp(userreq, REQ_ENABLE_RAVEN) == 0) {
           } else if (strcmp(userreq, REQ_FWD_COMMAND) == 0) {
+          } else if (strcmp(userreq, REQ_LISTEN_FILE) == 0) {
+          } else if (strcmp(userreq, REQ_LISTEN_FILE) == 0) {
+            // Listen for incoming file
+            printf("[i] File listen request received!\n");
+            if (antenna_fread("incoming.txt") == -1) {
+              printf("[!] Failed to read incoming file over the antenna\n");
+              continue;
+            }
           } else {
             printf("[:/] Could not process request [%c%c]\n", userreq[0],
                    userreq[1]);
@@ -242,6 +251,7 @@ int main(int argc, char *argv[]) {
 
         for (;;) {
           // Listen for incoming requests
+          printf("[*] Awaiting next request...");
           if (antenna_read_rs(userreq, 2, READ_MODE_UNTIL) == -1) {
             printf("[!] Failed to read request from antenna\n");
             continue;
@@ -261,6 +271,13 @@ int main(int argc, char *argv[]) {
           } else if (strcmp(userreq, REQ_RESET_COMMS) == 0) {
           } else if (strcmp(userreq, REQ_ENABLE_RAVEN) == 0) {
           } else if (strcmp(userreq, REQ_FWD_COMMAND) == 0) {
+          } else if (strcmp(userreq, REQ_LISTEN_FILE) == 0) {
+            // Listen for incoming file
+            printf("[i] File listen request received!\n");
+            if (antenna_fread_rs("incoming.txt") == -1) {
+              printf("[!] Failed to read incoming file over the antenna\n");
+              continue;
+            }
           } else {
             printf("[:/] Could not process request [%c%c]\n", userreq[0],
                    userreq[1]);
