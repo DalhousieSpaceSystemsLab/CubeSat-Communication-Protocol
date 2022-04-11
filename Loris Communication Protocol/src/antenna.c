@@ -360,7 +360,7 @@ static int _antenna_fwrite_fd(int antenna_method, int fd,
   while (!eof) {
     if (antenna_method == ANTENNA_ENCODE_RS) {
       bytes_read = fread(buffer_rs, sizeof(char), RS_DATA_LEN, f);
-      if (antenna_write_rs_fd(fd, buffer, bytes_read) == -1) {
+      if (antenna_write_rs_fd(fd, buffer_rs, bytes_read) == -1) {
         printf("[!] Failed to write encoded file data to antenna\n");
         status = -1;
         goto cleanup;
