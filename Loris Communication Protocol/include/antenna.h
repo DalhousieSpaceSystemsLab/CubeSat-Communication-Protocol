@@ -39,6 +39,8 @@
 
 enum { READ_MODE_UPTO, READ_MODE_UNTIL };
 
+enum { ANTENNA_ENCODE_NONE, ANTENNA_ENCODE_RS };
+
 /**
  * @brief Initializes the UART port for the antenna.
  *
@@ -153,6 +155,24 @@ int antenna_fwrite(const char* file_path);
  * @return 0 on success, -1 on error
  */
 int antenna_fwrite_fd(int fd, const char* file_path);
+
+/**
+ * @brief Send file over the air using FEC.
+ *
+ * @param file_path Path to file to send.
+ * @return 0 on success, -1 on error
+ */
+int antenna_fwrite_rs(const char* file_path);
+
+/**
+ * @brief Send file over the air using FEC but allows a custom
+ * file descriptor to be specified.
+ *
+ * @param fd File descriptor to use
+ * @param file_path Path to file to send.
+ * @return 0 on success, -1 on error
+ */
+int antenna_fwrite_rs_fd(int fd, const char* file_path);
 
 /**
  * @brief Receive file over the air.
