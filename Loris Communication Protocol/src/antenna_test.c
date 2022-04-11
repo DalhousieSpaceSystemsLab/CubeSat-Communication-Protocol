@@ -47,17 +47,17 @@ int main(int argc, char *argv[]) {
     int data_len = -1;
 
     FILE *file_pointer;
-    char txt_file_data[MAX_TXT_FILE_SIZE];
+    char file_path[256];
     char *dynamic_file_data = NULL;
     size_t bytes_to_read;
 
     pthread_t monitor_requests_thread;
-    int req = -1;
+    char req[2];
     char userreq[2];
 
     printf(
-        "[?] Read or write (r/w) or encoded (R/W) or receive text file (f) or "
-        "send text file (F) or autonomous mode (X) or start the groundstation "
+        "[?] Read or write (r/w) or encoded (R/W) or make a file request (f/F) "
+        "or autonomous mode (x/X) or start the groundstation "
         "daemon (Z)");
     scanf(" %c", &choice);
 
