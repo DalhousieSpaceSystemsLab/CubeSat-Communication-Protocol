@@ -357,14 +357,16 @@ int antenna_fwrite_fd(int fd, const char *file_path) {
   char buffer[FILE_BUFFER_SIZE];
   int bytes_read = 0;
   size_t total_bytes_read = 0;
-  while ((bytes_read = fread(buffer, sizeof(char), FILE_BUFFER_SIZE, f)) >=
-         FILE_BUFFER_SIZE) {
+  int eof = 0;
+  while (!eof) {
+    bytes_read = fread(buffer, sizeof(char), FILE_BUFFER_SIZE, f);
     if (antenna_write_fd(fd, buffer, bytes_read) == -1) {
       printf("[!] Failed to write file data to antenna\n");
       status = -1;
       goto cleanup;
     }
     total_bytes_read += bytes_read;
+    if (bytes_read < FILE_BUFFER_SIZE) eof = 1;
   }
 
 cleanup:
