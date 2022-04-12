@@ -25,8 +25,8 @@ void *check_rx(void *data) {
   char incoming[MAX_MSG_LEN];
   int bytes_read = 0;
 start:
-  if ((bytes_read = antenna_read_fd(fifo_get_rx(), incoming, MAX_MSG_LEN,
-                                    READ_MODE_UPTO)) < 0) {
+  if ((bytes_read = antenna_read_rs_fd(fifo_get_rx(), incoming, MAX_MSG_LEN,
+                                       READ_MODE_UPTO)) < 0) {
     printf("[!] Failed to read data from antenna\n");
     return NULL;
   } else if (bytes_read == 0) {
@@ -39,7 +39,7 @@ start:
 
 void *check_rx_file(void *data) {
 start:
-  if (antenna_fread_fd(fifo_get_rx(), "incoming.txt") == -1) {
+  if (antenna_fread_rs_fd(fifo_get_rx(), "incoming.txt") == -1) {
     printf("[!] Failed to fread file from antenna\n");
     goto start;
   }
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
     fgets(command, MAX_MSG_LEN - 2, stdin);
     command[strlen(command) - 1] = '\0';
 
-    if (antenna_fwrite_fd(fifo_get_tx(), command) == -1) {
+    if (antenna_fwrite_rs_fd(fifo_get_tx(), command) == -1) {
       printf("[!] failed to send file over the antenna\n");
       continue;
     }
