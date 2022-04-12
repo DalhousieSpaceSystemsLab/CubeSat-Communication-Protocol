@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
 
         scanf(" %s", req);
 
-        if (strcmp(req, REQ_BASIC_TELEMETRY) == 0) {
+        if (strncmp(req, REQ_BASIC_TELEMETRY, 2) == 0) {
           if (antenna_write(REQ_BASIC_TELEMETRY, 2) == -1) {
             printf("[!] Failed to make request\n");
             continue;
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
             printf("[!] failed to fread incoming file\n");
             continue;
           }
-        } else if (strcmp(req, REQ_LISTEN_FILE) == 0) {
+        } else if (strncmp(req, REQ_LISTEN_FILE, 2) == 0) {
           // Make request
           if (antenna_write(REQ_LISTEN_FILE, 2) == -1) {
             printf("[!] Failed to make request\n");
@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
 
         scanf(" %s", req);
 
-        if (strcmp(req, REQ_BASIC_TELEMETRY) == 0) {
+        if (strncmp(req, REQ_BASIC_TELEMETRY, 2) == 0) {
           if (antenna_write_rs(REQ_BASIC_TELEMETRY, 2) == -1) {
             printf("[!] Failed to make request\n");
             continue;
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
             printf("[!] failed to fread incoming file\n");
             continue;
           }
-        } else if (strcmp(req, REQ_LISTEN_FILE) == 0) {
+        } else if (strncmp(req, REQ_LISTEN_FILE, 2) == 0) {
           // Make request
           if (antenna_write_rs(REQ_LISTEN_FILE, 2) == -1) {
             printf("[!] Failed to make request\n");
@@ -222,20 +222,20 @@ int main(int argc, char *argv[]) {
           }
 
           // Identify request
-          if (strcmp(userreq, REQ_BASIC_TELEMETRY) == 0) {
+          if (strncmp(userreq, REQ_BASIC_TELEMETRY, 2) == 0) {
             // Send telemetry file
             printf("[i] Basic telemetry request received!\n");
             if (antenna_fwrite(FILE_BASIC_TELEMETRY) == -1) {
               printf("[!] Failed to send telemetry file to fulfill request\n");
               continue;
             }
-          } else if (strcmp(userreq, REQ_LARGE_TELEMETRY) == 0) {
-          } else if (strcmp(userreq, REQ_DELET_TELEMETRY) == 0) {
-          } else if (strcmp(userreq, REQ_REBOOT_OBC) == 0) {
-          } else if (strcmp(userreq, REQ_RESET_COMMS) == 0) {
-          } else if (strcmp(userreq, REQ_ENABLE_RAVEN) == 0) {
-          } else if (strcmp(userreq, REQ_FWD_COMMAND) == 0) {
-          } else if (strcmp(userreq, REQ_LISTEN_FILE) == 0) {
+          } else if (strncmp(userreq, REQ_LARGE_TELEMETRY, 2) == 0) {
+          } else if (strncmp(userreq, REQ_DELET_TELEMETRY, 2) == 0) {
+          } else if (strncmp(userreq, REQ_REBOOT_OBC, 2) == 0) {
+          } else if (strncmp(userreq, REQ_RESET_COMMS, 2) == 0) {
+          } else if (strncmp(userreq, REQ_ENABLE_RAVEN, 2) == 0) {
+          } else if (strncmp(userreq, REQ_FWD_COMMAND, 2) == 0) {
+          } else if (strncmp(userreq, REQ_LISTEN_FILE, 2) == 0) {
             // Listen for incoming file
             printf("[i] File listen request received!\n");
             if (antenna_fread("incoming.txt") == -1) {
@@ -260,20 +260,20 @@ int main(int argc, char *argv[]) {
           }
 
           // Identify request
-          if (strcmp(userreq, REQ_BASIC_TELEMETRY) == 0) {
+          if (strncmp(userreq, REQ_BASIC_TELEMETRY, 2) == 0) {
             // Send telemetry file
             printf("[i] Basic telemetry request received!\n");
             if (antenna_fwrite_rs(FILE_BASIC_TELEMETRY) == -1) {
               printf("[!] Failed to send telemetry file to fulfill request\n");
               continue;
             }
-          } else if (strcmp(userreq, REQ_LARGE_TELEMETRY) == 0) {
-          } else if (strcmp(userreq, REQ_DELET_TELEMETRY) == 0) {
-          } else if (strcmp(userreq, REQ_REBOOT_OBC) == 0) {
-          } else if (strcmp(userreq, REQ_RESET_COMMS) == 0) {
-          } else if (strcmp(userreq, REQ_ENABLE_RAVEN) == 0) {
-          } else if (strcmp(userreq, REQ_FWD_COMMAND) == 0) {
-          } else if (strcmp(userreq, REQ_LISTEN_FILE) == 0) {
+          } else if (strncmp(userreq, REQ_LARGE_TELEMETRY, 2) == 0) {
+          } else if (strncmp(userreq, REQ_DELET_TELEMETRY, 2) == 0) {
+          } else if (strncmp(userreq, REQ_REBOOT_OBC, 2) == 0) {
+          } else if (strncmp(userreq, REQ_RESET_COMMS, 2) == 0) {
+          } else if (strncmp(userreq, REQ_ENABLE_RAVEN, 2) == 0) {
+          } else if (strncmp(userreq, REQ_FWD_COMMAND, 2) == 0) {
+          } else if (strncmp(userreq, REQ_LISTEN_FILE, 2) == 0) {
             // Listen for incoming file
             printf("[i] File listen request received!\n");
             if (antenna_fread_rs("incoming.txt") == -1) {
@@ -329,18 +329,18 @@ int main(int argc, char *argv[]) {
 //   }
 
 //   // Identify request
-//   if (strcmp(req, REQ_BASIC_TELEMETRY) == 0) {
+//   if (strncmp(req, REQ_BASIC_TELEMETRY, 2) == 0) {
 //     // Send telemetry file
 //     printf("[i] Basic telemetry request received!\n");
 //     if (antenna_fwrite(FILE_BASIC_TELEMETRY) == -1) {
 //       printf("[!] Failed to send telemetry file to fulfill request\n");
 //       goto start;
 //     }
-//   } else if (strcmp(req, REQ_LARGE_TELEMETRY) == 0) {
-//   } else if (strcmp(req, REQ_DELET_TELEMETRY) == 0) {
-//   } else if (strcmp(req, REQ_REBOOT_OBC) == 0) {
-//   } else if (strcmp(req, REQ_RESET_COMMS) == 0) {
-//   } else if (strcmp(req, REQ_ENABLE_RAVEN) == 0) {
+//   } else if (strncmp(req, REQ_LARGE_TELEMETRY, 2) == 0) {
+//   } else if (strncmp(req, REQ_DELET_TELEMETRY, 2) == 0) {
+//   } else if (strncmp(req, REQ_REBOOT_OBC, 2) == 0) {
+//   } else if (strncmp(req, REQ_RESET_COMMS, 2) == 0) {
+//   } else if (strncmp(req, REQ_ENABLE_RAVEN, 2) == 0) {
 //   } else {
 //     printf("[:/] Could not process request [%c%c]\n", req[0], req[1]);
 //   }
