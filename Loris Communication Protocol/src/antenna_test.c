@@ -6,14 +6,18 @@
 #include <pthread.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 // Requests
 #define REQ_BASIC_TELEMETRY "A1"
 #define REQ_LARGE_TELEMETRY "B2"
 #define REQ_DELET_TELEMETRY "C3"
 #define REQ_REBOOT_OBC "D4"
-#define REQ_RESET_COMMS "E5"
-#define REQ_ENABLE_RAVEN "F6"
+#define REQ_SHUTDOWN_OBC "E5"
+#define REQ_RESET_COMMS "F6"
+#define REQ_ENABLE_RAVEN "G7"
 #define REQ_FWD_COMMAND "CC"
 #define REQ_LISTEN_FILE "FF"
 
@@ -232,7 +236,22 @@ int main(int argc, char *argv[]) {
           } else if (strncmp(userreq, REQ_LARGE_TELEMETRY, 2) == 0) {
           } else if (strncmp(userreq, REQ_DELET_TELEMETRY, 2) == 0) {
           } else if (strncmp(userreq, REQ_REBOOT_OBC, 2) == 0) {
+            //Reboot the system
+            FILE *console_command;
+            console_command = popen("reboot", "w");
+            pclose(console_command);
+          } else if (strncmp(userreq, REQ_SHUTDOWN_OBC, 2) == 0) {
+            //Shutdown the system. The watchdog will kick in in 10 minutes and boot it back up again.
+            FILE *console_command;
+            console_command = popen("shutdown now", "w");
+            pclose(console_command);
           } else if (strncmp(userreq, REQ_RESET_COMMS, 2) == 0) {
+            // Cut off power to COMMS for 5 seconds.
+            set_gpio(127,0);
+            usleep(50000000);
+            set_gpio(127,1);
+            //Should include some sort of safety in case gpio doesn't turn back on, reboot OBC which
+            //should reset all the pins to their default states?
           } else if (strncmp(userreq, REQ_ENABLE_RAVEN, 2) == 0) {
           } else if (strncmp(userreq, REQ_FWD_COMMAND, 2) == 0) {
           } else if (strncmp(userreq, REQ_LISTEN_FILE, 2) == 0) {
@@ -319,6 +338,23 @@ int main(int argc, char *argv[]) {
   return 0;
 }
 
+//This function streamlines altering the logic level of a specified pin.
+void set_gpio(int gpio, int state){
+    char gpio_s[3];
+    char state_s[3];
+    sprintf(gpio_s,"%d",gpio);
+    sprintf(state_s,"%d",state);
+    printf("Setting GPIO.\n");
+    printf("GPIO:%s, STATE: %s\n", gpio_s,state_s);
+    int fd;
+    char* gpio_directory = (char*)malloc(sizeof (char) * 100);
+    sprintf(gpio_directory,"/sys/class/gpio/gpio%s/value", gpio_s);
+    fd = open(gpio_directory, O_WRONLY | O_SYNC);
+    write(fd, state_s, 1);
+    close(fd);
+    printf("Output GPIO %s set to %s.\n",gpio_s,state_s);
+    free(gpio_directory);
+}
 // void *monitor_requests(void *data) {
 //   char req[2];
 // start:
