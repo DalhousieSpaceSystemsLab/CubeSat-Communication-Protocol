@@ -230,6 +230,12 @@ int main(int argc, char *argv[]) {
               continue;
             }
           } else if (strcmp(userreq, REQ_LARGE_TELEMETRY) == 0) {
+            // Send large telemetry file
+            printf("[i] Large telemetry request received!\n");
+            if (antenna_fwrite(FILE_LARGE_TELEMETRY) == -1) {
+              printf("[!] Failed to send large telemetry file to fulfill request\n");
+              continue;
+            }            
           } else if (strcmp(userreq, REQ_DELET_TELEMETRY) == 0) {
           } else if (strcmp(userreq, REQ_REBOOT_OBC) == 0) {
           } else if (strcmp(userreq, REQ_RESET_COMMS) == 0) {
