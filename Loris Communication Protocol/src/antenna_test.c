@@ -13,7 +13,7 @@
 #define REQ_DELET_TELEMETRY "C3"
 #define REQ_REBOOT_OBC "D4"
 #define REQ_RESET_COMMS "E5"
-#define REQ_ENABLE_RAVEN "F6"
+#define REQ_RAVEN_TELEM "F6"
 #define REQ_FWD_COMMAND "CC"
 #define REQ_LISTEN_FILE "FF"
 
