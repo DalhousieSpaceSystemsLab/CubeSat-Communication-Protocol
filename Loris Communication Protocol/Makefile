@@ -1,4 +1,4 @@
-CC=arm-none-linux-gnueabihf-gcc
+CC=/home/galaxia/gcc-arm-10.3-2021.07-x86_64-arm-none-linux-gnueabihf/bin/arm-none-linux-gnueabihf-gcc
 INCLUDE=include
 SRCFOLDER=src
 SRC=$(SRCFOLDER)/main.c

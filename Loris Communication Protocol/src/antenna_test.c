@@ -246,8 +246,7 @@ int main(int argc, char *argv[]) {
           } else if (strcmp(userreq, REQ_DELET_TELEMETRY) == 0) {
             // Delete specified telemetry file (NEVER REMOVE supplementary telem data or OBC reboot count data text files)
             printf("[i] Delete telemetry file request received!\n");
-            sprintf(rm_command,"rm /home/root/telem/%s", file_name); // This path may need to be changed depending on execution location
-            // The text files could also be inserted to the same location as this execution for ease of access.
+            sprintf(rm_command,"rm /home/root/telemdata/%s", file_name);
             console_command = popen(rm_command, "w");
             pclose(console_command);
 
@@ -271,6 +270,10 @@ int main(int argc, char *argv[]) {
 
           } else if (strcmp(userreq, REQ_RAVEN_TELEM) == 0) {
             // Start the Raven telemetry program
+            printf("[i] Start Raven telemetry program request received!\n");
+            sprintf(rm_command,"./ /home/root/telemprog/raven_temp");
+            console_command = popen(rm_command, "w");
+            pclose(console_command);
 
           } else if (strcmp(userreq, REQ_FWD_COMMAND) == 0) {
             // For future use
@@ -342,6 +345,10 @@ int main(int argc, char *argv[]) {
 
           } else if (strcmp(userreq, REQ_RAVEN_TELEM) == 0) {
             // Start the Raven telemetry program
+            printf("[i] Start Raven telemetry program request received!\n");
+            sprintf(rm_command,"./ /home/root/telemprog/raven_temp");
+            console_command = popen(rm_command, "w");
+            pclose(console_command);
 
           } else if (strcmp(userreq, REQ_FWD_COMMAND) == 0) {
             // For future use
