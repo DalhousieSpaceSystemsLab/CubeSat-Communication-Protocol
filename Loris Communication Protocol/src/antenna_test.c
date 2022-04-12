@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
             close(gpio_command);
 
           } else if (strcmp(userreq, REQ_RAVEN_TELEM) == 0) {
-
+            // Start the Raven telemetry program
 
           } else if (strcmp(userreq, REQ_FWD_COMMAND) == 0) {
             // For future use
