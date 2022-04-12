@@ -56,6 +56,10 @@ int main(int argc, char *argv[]) {
     char req[2];
     char userreq[2];
 
+    FILE *console_command;
+    int gpio_command;
+    char* comms_pin = (char*)malloc(sizeof (char) * 50);
+
     printf(
         "[?] Read or write (r/w) or encoded (R/W) or make a file request (f/F) "
         "or autonomous mode (x/X) or start the groundstation "
@@ -225,20 +229,33 @@ int main(int argc, char *argv[]) {
           if (strcmp(userreq, REQ_BASIC_TELEMETRY) == 0) {
             // Send telemetry file
             printf("[i] Basic telemetry request received!\n");
-            if (antenna_fwrite(FILE_BASIC_TELEMETRY) == -1) {
+            if (antenna_fwrite(file_name) == -1) {
               printf("[!] Failed to send telemetry file to fulfill request\n");
               continue;
             }
           } else if (strcmp(userreq, REQ_LARGE_TELEMETRY) == 0) {
             // Send large telemetry file
             printf("[i] Large telemetry request received!\n");
-            if (antenna_fwrite(FILE_LARGE_TELEMETRY) == -1) {
+            if (antenna_fwrite(file_name) == -1) {
               printf("[!] Failed to send large telemetry file to fulfill request\n");
               continue;
             }            
           } else if (strcmp(userreq, REQ_DELET_TELEMETRY) == 0) {
+            // Delete specified telemetry file
+                  
           } else if (strcmp(userreq, REQ_REBOOT_OBC) == 0) {
+            // Reboot the OBC
+            console_command = popen("reboot", "w");
+            pclose(console_command);
           } else if (strcmp(userreq, REQ_RESET_COMMS) == 0) {
+            // Reset COMMS
+            sprintf(comms_pin,"/sys/class/gpio/gpio127/value");
+            gpio_command = open(comms_pin, O_WRONLY | O_SYNC);
+            write(gpio_command, "0", 1); // Turn off COMMS
+            sleep(5); // Wait 5 seconds before restarting
+            gpio_command = open(comms_pin, O_WRONLY | O_SYNC);
+            write(gpio_command, "1", 1); // Turn on COMMS
+            close(gpio_command);
           } else if (strcmp(userreq, REQ_ENABLE_RAVEN) == 0) {
           } else if (strcmp(userreq, REQ_FWD_COMMAND) == 0) {
           } else if (strcmp(userreq, REQ_LISTEN_FILE) == 0) {
