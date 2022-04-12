@@ -305,11 +305,12 @@ int main(int argc, char *argv[]) {
           if (strcmp(userreq, REQ_BASIC_TELEMETRY) == 0) {
             // Send telemetry file
             printf("[i] Basic telemetry request received!\n");
-            if (antenna_fwrite_rs(FILE_BASIC_TELEMETRY) == -1) {
+            if (antenna_fwrite(file_name) == -1) {
               printf("[!] Failed to send telemetry file to fulfill request\n");
               continue;
             }
-                    } else if (strcmp(userreq, REQ_LARGE_TELEMETRY) == 0) {
+
+          } else if (strcmp(userreq, REQ_LARGE_TELEMETRY) == 0) {
             // Send large telemetry file
             printf("[i] Large telemetry request received!\n");
             if (antenna_fwrite(file_name) == -1) {
@@ -320,8 +321,7 @@ int main(int argc, char *argv[]) {
           } else if (strcmp(userreq, REQ_DELET_TELEMETRY) == 0) {
             // Delete specified telemetry file (NEVER REMOVE supplementary telem data or OBC reboot count data text files)
             printf("[i] Delete telemetry file request received!\n");
-            sprintf(rm_command,"rm /home/root/telem/%s", file_name); // This path may need to be changed depending on execution location
-            // The text files could also be inserted to the same location as this execution for ease of access.
+            sprintf(rm_command,"rm /home/root/telemdata/%s", file_name);
             console_command = popen(rm_command, "w");
             pclose(console_command);
 
