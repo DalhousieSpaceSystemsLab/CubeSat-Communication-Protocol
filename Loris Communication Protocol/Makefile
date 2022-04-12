@@ -1,4 +1,6 @@
-CC=arm-none-linux-gnueabihf-gcc
+#CC=arm-none-linux-gnueabihf-gcc
+# CMAKE_C_COMPILER=/home/sterlinga/gcc-arm/gcc-arm-10.3-2021.07-x86_64-arm-none-linux-gnueabihf/bin/arm-none-linux-gnueabihf-gcc
+CC=/home/sterlinga/gcc-arm/gcc-arm-10.3-2021.07-x86_64-arm-none-linux-gnueabihf/bin/arm-none-linux-gnueabihf-gcc
 INCLUDE=include
 SRCFOLDER=src
 SRC=$(SRCFOLDER)/main.c

@@ -26,6 +26,7 @@
 #define FILE_INCOMING "incoming.txt"
 
 void *monitor_requests(void *data);
+void set_gpio(int,int);
 
 int main(int argc, char *argv[]) {
   // Check argc
