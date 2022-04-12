@@ -13,7 +13,7 @@ FIFO_TARGET=fifo
 LIBCORRECT_BUILD_PATH=libcorrect/build-arm32
 LIBCORRECT_BUILD_PATH_VANILLA=libcorrect/build-x86
 
-.PHONY: all correct correct-vanilla obc obc2 test
+.PHONY: all correct correct-vanilla obc obc2 test clean
 
 all:
 	$(CC) -o $(TARGET).bin -I $(INCLUDE) $(SRC) -L. -l correct
@@ -31,7 +31,7 @@ correct-vanilla:
 test: test-pc test-arm
 
 test-arm: correct
-	$(CC) -static -o $(TEST_TARGET).bin -I $(INCLUDE) $(SRC_TEST) -L. -lcorrect -lpthread
+	$(CC) -o $(TEST_TARGET).bin -I $(INCLUDE) $(SRC_TEST) -L. -lcorrect -lpthread
 
 test-pc: correct-vanilla
 	gcc -static -o $(TEST_TARGET_PC).bin -I$(INCLUDE) $(SRC_TEST) -L. -lcorrect -lpthread
@@ -43,4 +43,7 @@ obc: correct test
 	scp $(TEST_TARGET).bin root@173.212.68.129:/home/root
 
 obc2: correct test
-	scp -P 2222 $(TEST_TARGET).bin root@173.212.68.129:/home/root		
+	scp -P 2222 $(TEST_TARGET).bin root@173.212.68.129:/home/root
+
+clean:
+	rm -rf $(LIBCORRECT_BUILD_PATH) $(LIBCORRECT_BUILD_PATH_VANILLA) libcorrect.a $(FIFO_TARGET) $(TEST_TARGET) $(TEST_TARGET_PC)
