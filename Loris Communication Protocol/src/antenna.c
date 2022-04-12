@@ -492,9 +492,13 @@ static int _antenna_fread_fd(int antenna_mode, int fd, const char *file_path) {
   char buffer_rs[RS_DATA_LEN];
   size_t total_bytes_read = 0;
   int bytes_read = -1;
+  int bytes_to_read = 0;
+  int bytes_remaining = 0;
   while (total_bytes_read < file_size) {
+    bytes_remaining = file_size - total_bytes_read;
+    bytes_to_read = (bytes_remaining > FILE_BUFFER_SIZE) ? FILE_BUFFER_SIZE : bytes_remaining;
     if (antenna_mode == ANTENNA_ENCODE_RS) {
-      if ((bytes_read = antenna_read_rs_fd(fd, buffer_rs, FILE_BUFFER_SIZE,
+      if ((bytes_read = antenna_read_rs_fd(fd, buffer_rs, bytes_to_read,
                                            READ_MODE_UPTO)) == -1) {
         printf("[!] Failed to read data from the antenna\n");
         status = -1;
@@ -508,7 +512,7 @@ static int _antenna_fread_fd(int antenna_mode, int fd, const char *file_path) {
         continue;
       }
     } else {
-      if ((bytes_read = antenna_read_fd(fd, buffer, FILE_BUFFER_SIZE,
+      if ((bytes_read = antenna_read_fd(fd, buffer, bytes_to_read,
                                         READ_MODE_UPTO)) == -1) {
         printf("[!] Failed to read data from the antenna\n");
         status = -1;
