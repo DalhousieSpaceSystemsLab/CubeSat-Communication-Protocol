@@ -234,16 +234,20 @@ int main(int argc, char *argv[]) {
               printf("[!] Failed to send telemetry file to fulfill request\n");
               continue;
             }
+
           } else if (strcmp(userreq, REQ_LARGE_TELEMETRY) == 0) {
             // Send large telemetry file
             printf("[i] Large telemetry request received!\n");
             if (antenna_fwrite(file_name) == -1) {
               printf("[!] Failed to send large telemetry file to fulfill request\n");
               continue;
-            }            
+            }
+
           } else if (strcmp(userreq, REQ_DELET_TELEMETRY) == 0) {
             // Delete specified telemetry file (NEVER REMOVE supplementary telem data or OBC reboot count data text files)
+            printf("[i] Delete telemetry file request received!\n");
             sprintf(rm_command,"rm /home/root/telem/%s", file_name); // This path may need to be changed depending on execution location
+            // The text files could also be inserted to the same location as this execution for ease of access.
             console_command = popen(rm_command, "w");
             pclose(console_command);
 
@@ -265,8 +269,11 @@ int main(int argc, char *argv[]) {
             write(gpio_command, "1", 1); // Turn on COMMS
             close(gpio_command);
 
-          } else if (strcmp(userreq, REQ_ENABLE_RAVEN) == 0) {
+          } else if (strcmp(userreq, REQ_RAVEN_TELEM) == 0) {
+
+
           } else if (strcmp(userreq, REQ_FWD_COMMAND) == 0) {
+            // For future use
           } else if (strcmp(userreq, REQ_LISTEN_FILE) == 0) {
             // Listen for incoming file
             printf("[i] File listen request received!\n");
@@ -299,12 +306,45 @@ int main(int argc, char *argv[]) {
               printf("[!] Failed to send telemetry file to fulfill request\n");
               continue;
             }
-          } else if (strcmp(userreq, REQ_LARGE_TELEMETRY) == 0) {
+                    } else if (strcmp(userreq, REQ_LARGE_TELEMETRY) == 0) {
+            // Send large telemetry file
+            printf("[i] Large telemetry request received!\n");
+            if (antenna_fwrite(file_name) == -1) {
+              printf("[!] Failed to send large telemetry file to fulfill request\n");
+              continue;
+            }
+
           } else if (strcmp(userreq, REQ_DELET_TELEMETRY) == 0) {
+            // Delete specified telemetry file (NEVER REMOVE supplementary telem data or OBC reboot count data text files)
+            printf("[i] Delete telemetry file request received!\n");
+            sprintf(rm_command,"rm /home/root/telem/%s", file_name); // This path may need to be changed depending on execution location
+            // The text files could also be inserted to the same location as this execution for ease of access.
+            console_command = popen(rm_command, "w");
+            pclose(console_command);
+
           } else if (strcmp(userreq, REQ_REBOOT_OBC) == 0) {
+            // Reboot the OBC
+            printf("[i] OBC reboot request received!\n");
+            console_command = popen("reboot", "w");
+            pclose(console_command);
+            printf("[!] OBC reboot failed\n"); // Only executed if the OBC does not shut down on the command
+            continue;
+
           } else if (strcmp(userreq, REQ_RESET_COMMS) == 0) {
-          } else if (strcmp(userreq, REQ_ENABLE_RAVEN) == 0) {
+            // Reset COMMS
+            sprintf(comms_pin,"/sys/class/gpio/gpio127/value");
+            gpio_command = open(comms_pin, O_WRONLY | O_SYNC);
+            write(gpio_command, "0", 1); // Turn off COMMS
+            sleep(5); // Wait 5 seconds before restarting
+            gpio_command = open(comms_pin, O_WRONLY | O_SYNC);
+            write(gpio_command, "1", 1); // Turn on COMMS
+            close(gpio_command);
+
+          } else if (strcmp(userreq, REQ_RAVEN_TELEM) == 0) {
+            // Start the Raven telemetry program
+
           } else if (strcmp(userreq, REQ_FWD_COMMAND) == 0) {
+            // For future use
           } else if (strcmp(userreq, REQ_LISTEN_FILE) == 0) {
             // Listen for incoming file
             printf("[i] File listen request received!\n");
