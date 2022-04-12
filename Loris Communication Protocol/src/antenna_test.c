@@ -59,6 +59,7 @@ int main(int argc, char *argv[]) {
     FILE *console_command;
     int gpio_command;
     char* comms_pin = (char*)malloc(sizeof (char) * 50);
+    char* rm_command = (char*)malloc(sizeof (char) * 50);
 
     printf(
         "[?] Read or write (r/w) or encoded (R/W) or make a file request (f/F) "
@@ -241,12 +242,19 @@ int main(int argc, char *argv[]) {
               continue;
             }            
           } else if (strcmp(userreq, REQ_DELET_TELEMETRY) == 0) {
-            // Delete specified telemetry file
-                  
+            // Delete specified telemetry file (NEVER REMOVE supplementary telem data or OBC reboot count data text files)
+            sprintf(rm_command,"rm /home/root/telem/%s", file_name); // This path may need to be changed depending on execution location
+            console_command = popen(rm_command, "w");
+            pclose(console_command);
+
           } else if (strcmp(userreq, REQ_REBOOT_OBC) == 0) {
             // Reboot the OBC
+            printf("[i] OBC reboot request received!\n");
             console_command = popen("reboot", "w");
             pclose(console_command);
+            printf("[!] OBC reboot failed\n"); // Only executed if the OBC does not shut down on the command
+            continue;
+
           } else if (strcmp(userreq, REQ_RESET_COMMS) == 0) {
             // Reset COMMS
             sprintf(comms_pin,"/sys/class/gpio/gpio127/value");
@@ -256,6 +264,7 @@ int main(int argc, char *argv[]) {
             gpio_command = open(comms_pin, O_WRONLY | O_SYNC);
             write(gpio_command, "1", 1); // Turn on COMMS
             close(gpio_command);
+
           } else if (strcmp(userreq, REQ_ENABLE_RAVEN) == 0) {
           } else if (strcmp(userreq, REQ_FWD_COMMAND) == 0) {
           } else if (strcmp(userreq, REQ_LISTEN_FILE) == 0) {
