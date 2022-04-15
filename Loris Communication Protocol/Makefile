@@ -34,7 +34,7 @@ test-arm: correct
 	$(CC) -o $(TEST_TARGET).bin -I $(INCLUDE) $(SRC_TEST) -L. -lcorrect -lpthread
 
 test-pc: correct-vanilla
-	gcc -static -o $(TEST_TARGET_PC).bin -I$(INCLUDE) $(SRC_TEST) -L. -lcorrect -lpthread
+	gcc -static -g -o $(TEST_TARGET_PC).bin -I$(INCLUDE) $(SRC_TEST) -L. -lcorrect -lpthread
 
 fifo: correct-vanilla
 	gcc -g -o $(FIFO_TARGET).bin -I $(INCLUDE) $(SRC_FIFO) -L. -l correct -l pthread
