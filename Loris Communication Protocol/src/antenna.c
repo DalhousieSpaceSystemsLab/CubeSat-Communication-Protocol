@@ -40,13 +40,42 @@ int antenna_init(const char *path) {
 
   /* fetch bytes as they become available */
   tty.c_cc[VMIN] = 1;
-  tty.c_cc[VTIME] = 1;
+  tty.c_cc[VTIME] = 5;
 
   if (tcsetattr(uartfd, TCSANOW, &tty) != 0) {
     printf("Error from tcsetattr: %s\n", strerror(errno));
     return -1;
   }
 }
+
+// int antenna_init(const char *path) {
+//   if ((uartfd = open(path, O_RDWR | O_NOCTTY | O_SYNC)) < 0) {
+//     printf("[!] Failed to open I/O device at %s\n", path);
+//     return -1;
+//   }
+
+//   struct termios oldtio, newtio;
+
+//   if (tcgetattr(uartfd, &oldtio) < 0) { /* save current port settings */
+//     printf("Error from tcgetattr: %s\n", strerror(errno));
+//     return -1;
+//   }
+
+//   bzero(&newtio, sizeof(newtio));
+//         newtio.c_cflag = UART_SPEED | CRTSCTS | CS8 | CLOCAL | CREAD;
+//         newtio.c_iflag = IGNPAR;
+//         newtio.c_oflag = 0;
+
+  
+//   /* set input mode (non-canonical, no echo,...) */
+//   newtio.c_lflag = 0;
+    
+//   newtio.c_cc[VTIME]    = 5;   /* inter-character timer unused */
+//   newtio.c_cc[VMIN]     = 1;   /* block read until 1 byte is read */
+  
+//   tcflush(uartfd, TCIFLUSH);
+//   tcsetattr(uartfd,TCSANOW,&newtio);
+// }
 
 /**
  * @brief Identical to antenna_write, but allows a custom file descriptor to be
@@ -65,11 +94,32 @@ int antenna_write_fd(int fd, const char *data, size_t data_len) {
     return -1;
   }
 
-  // Write bytes to antenna
-  if (write(fd, data, data_len) < data_len) {
-    printf("[!] Failed to send data of %d bytes in length.\n", data_len);
-    return -1;
+  // DEBUG
+  // printf("[DEBUG] Waiting for fd to be ready...\n");
+
+
+  // DEBUG
+  // printf("[DEBUG] Ready to write!\n");
+
+  size_t total_bytes_written = 0;
+  char buffer[WRITE_BUFFER_SIZE];
+  while(total_bytes_written < data_len) {
+    int bytes_remaining = data_len - total_bytes_written;
+    int bytes_to_write = (WRITE_BUFFER_SIZE > bytes_remaining) ? bytes_remaining : WRITE_BUFFER_SIZE;
+    memcpy(buffer, &data[total_bytes_written], bytes_to_write);
+    if(write(fd, buffer, bytes_to_write) < bytes_to_write) {
+      printf("[!] Failed to send data of %d bytes in length.\n", data_len);
+      return -1;
+    }
+    total_bytes_written += bytes_to_write;
+    usleep(WRITE_DELAY);
   }
+
+  // Write bytes to antenna
+  // if (write(fd, data, data_len) < data_len) {
+  //   printf("[!] Failed to send data of %d bytes in length.\n", data_len);
+  //   return -1;
+  // }
 
   // done
   return 0;
@@ -279,9 +329,10 @@ int antenna_read_rs_fd(int fd, char *buffer, size_t read_len, int read_mode) {
     int new_bytes_decoded = -1;
     if ((new_bytes_decoded = correct_reed_solomon_decode(
              encoder, data_in, bytes_read, decoded)) < 0) {
-      printf("[!] Failed to decode incoming block\n");
-      status = -1;
-      goto cleanup;
+      printf("[!] Failed to decode incoming block. SKIPPING.\n");
+      // status = -1;
+      // goto cleanup;
+      continue;
     }
 
     // Copy decoded bytes into buffer
@@ -325,6 +376,15 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
   return antenna_read_rs_fd(uartfd, buffer, read_len, read_mode);
 }
 
+static inline void display_progress(size_t n, size_t total, int width) {
+  int progress = width * n / total;
+  printf("\rDownload progress (%lu/%lu): [", n, total);
+  for(int x = 0; x < progress; x++) printf("#");
+  for(int x = progress; x < width; x++) printf("-");
+  printf("]");
+  fflush(stdout);
+}
+
 static int _antenna_fwrite_fd(int antenna_method, int fd,
                               const char *file_path) {
   // Designate status
@@ -342,6 +402,9 @@ static int _antenna_fwrite_fd(int antenna_method, int fd,
     return status;
   }
 
+  // DEBUG
+  // printf("[DEBUG] Sending file notice...\n");
+
   // Send notice of incoming file to destination
   char file_notice[FILE_NOTICE_LEN];
   sprintf(file_notice, FILE_NOTICE_FMT, file_size);
@@ -350,6 +413,9 @@ static int _antenna_fwrite_fd(int antenna_method, int fd,
   } else {
     antenna_write_fd(fd, file_notice, FILE_NOTICE_LEN);
   }
+  // DEBUG
+  // printf("[DEBUG] Done!\n");
+  // printf("[DEBUG] Starting to buffer-copy file out...\n");
 
   // Read file into buffer and pass along to antenna
   char buffer[FILE_BUFFER_SIZE];
@@ -367,6 +433,10 @@ static int _antenna_fwrite_fd(int antenna_method, int fd,
       }
     } else {
       bytes_read = fread(buffer, sizeof(char), FILE_BUFFER_SIZE, f);
+
+      // DEBUG
+      // printf("[DEBUG] fread(%d bytes) -> antenna_write_fd(%d bytes)\n", FILE_BUFFER_SIZE, bytes_read);
+      
       if (antenna_write_fd(fd, buffer, bytes_read) == -1) {
         printf("[!] Failed to write file data to antenna\n");
         status = -1;
@@ -375,7 +445,14 @@ static int _antenna_fwrite_fd(int antenna_method, int fd,
     }
     total_bytes_read += bytes_read;
     if (bytes_read < FILE_BUFFER_SIZE) eof = 1;
+
+    // Display progress
+    display_progress(total_bytes_read, file_size, PROGRESS_BAR_WIDTH);
   }
+  
+  // DEBUG
+  // printf("[DEBUG] Done!\n");
+  // printf("[DEBUG] Cleaning up.\n");
 
 cleanup:
   // Close the file
@@ -446,19 +523,22 @@ int antenna_fwrite_rs(const char *file_path) {
 static int _antenna_fread_fd(int antenna_mode, int fd, const char *file_path) {
   int status = 0;
 
+  // DEBUG
+  // printf("[DEBUG] Waiting for file notice...\n");
+
   // Wait for file notice
   size_t file_size = 0;
   int ready = 0;
   while (!ready) {
     char notice[FILE_NOTICE_LEN];
     if (antenna_mode == ANTENNA_ENCODE_RS) {
-      if (antenna_read_rs_fd(fd, notice, FILE_NOTICE_LEN, READ_MODE_UPTO) ==
+      if (antenna_read_rs_fd(fd, notice, FILE_NOTICE_LEN, READ_MODE_UNTIL) ==
           -1) {
         printf("[!] Failed to read from antenna\n");
         return -1;
       }
     } else {
-      if (antenna_read_fd(fd, notice, FILE_NOTICE_LEN, READ_MODE_UPTO) == -1) {
+      if (antenna_read_fd(fd, notice, FILE_NOTICE_LEN, READ_MODE_UNTIL) == -1) {
         printf("[!] Failed to read from antenna\n");
         return -1;
       }
@@ -470,13 +550,15 @@ static int _antenna_fread_fd(int antenna_mode, int fd, const char *file_path) {
       ready = 1;
 
       // DEBUG
-      printf("[i] File notice received! Incoming file size is %u bytes\n",
-             file_size);
+      // printf("[i] File notice received! Incoming file size is %u bytes\n",
+      //        file_size);
 
     } else {
       continue;
     }
   }
+  // DEBUG
+  // printf("[DEBUG] Done!\n");
 
   // Create file to store
   FILE *fp = fopen(file_path, "w");
@@ -495,14 +577,21 @@ static int _antenna_fread_fd(int antenna_mode, int fd, const char *file_path) {
   int bytes_to_read = 0;
   int bytes_remaining = 0;
   while (total_bytes_read < file_size) {
-    bytes_remaining = file_size - total_bytes_read;
-    bytes_to_read = (bytes_remaining > FILE_BUFFER_SIZE) ? FILE_BUFFER_SIZE : bytes_remaining;
+    
     if (antenna_mode == ANTENNA_ENCODE_RS) {
+      bytes_remaining = file_size - total_bytes_read;
+      bytes_to_read = (bytes_remaining > RS_DATA_LEN) ? RS_DATA_LEN : bytes_remaining;
       if ((bytes_read = antenna_read_rs_fd(fd, buffer_rs, bytes_to_read,
-                                           READ_MODE_UPTO)) == -1) {
+                                           READ_MODE_UNTIL)) == -1) {
         printf("[!] Failed to read data from the antenna\n");
         status = -1;
         goto cleanup;
+      }
+
+      // Handle no bytes read clause
+      if(bytes_read == 0) {
+        // Go back to the start and try again
+        continue;
       }
 
       if (fwrite(buffer_rs, sizeof(char), bytes_read, fp) < bytes_read) {
@@ -512,11 +601,23 @@ static int _antenna_fread_fd(int antenna_mode, int fd, const char *file_path) {
         continue;
       }
     } else {
+      bytes_remaining = file_size - total_bytes_read;
+      bytes_to_read = (bytes_remaining > FILE_BUFFER_SIZE) ? FILE_BUFFER_SIZE : bytes_remaining;
+      // DEBUG
+      // printf("[DEBUG] Reading %d more bytes...\n", bytes_to_read);
       if ((bytes_read = antenna_read_fd(fd, buffer, bytes_to_read,
-                                        READ_MODE_UPTO)) == -1) {
+                                        READ_MODE_UNTIL)) == -1) {
         printf("[!] Failed to read data from the antenna\n");
         status = -1;
         goto cleanup;
+      }
+      // DEBUG
+      // printf("[DEBUG] %d bytes read!\n", bytes_read);
+
+      // Handle no bytes read clause
+      if(bytes_read == 0) {
+        // Go back to the start and try again
+        continue;
       }
 
       if (fwrite(buffer, sizeof(char), bytes_read, fp) < bytes_read) {
@@ -529,8 +630,12 @@ static int _antenna_fread_fd(int antenna_mode, int fd, const char *file_path) {
 
     total_bytes_read += bytes_read;
 
+    // Display progress
+    display_progress(total_bytes_read, file_size, PROGRESS_BAR_WIDTH);
+
     // DEBUG
-    printf("\r[i] Bytes read: %d", total_bytes_read);
+    // printf("[DEBUG] Remaining bytes: %d\n", bytes_remaining);
+    // printf("\r[i] Total bytes read: %d", total_bytes_read);
   }
   printf("\n");
 

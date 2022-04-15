@@ -19,6 +19,7 @@
 #include <sys/stat.h>
 #include <termios.h>
 #include <unistd.h>
+#include <sys/select.h>
 
 // Settings //
 // UART
@@ -28,14 +29,19 @@
 // Reed-solomon
 #define RS_BLOCK_LEN 255
 #define RS_DATA_LEN 223
-#define RS_NUM_ROOTS 2
+#define RS_NUM_ROOTS 32
 
 // Antenna
 #define MAX_TXT_FILE_SIZE 8191
 #define MAX_READ_LEN 256
-#define FILE_BUFFER_SIZE 255
+#define FILE_BUFFER_SIZE 64
 #define FILE_NOTICE_FMT "F%u"
 #define FILE_NOTICE_LEN 16
+#define WRITE_DELAY 200000L
+#define WRITE_BUFFER_SIZE 64
+
+// Display
+#define PROGRESS_BAR_WIDTH 40
 
 enum { READ_MODE_UPTO, READ_MODE_UNTIL };
 
