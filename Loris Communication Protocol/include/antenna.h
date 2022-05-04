@@ -29,7 +29,7 @@
 // Reed-solomon
 #define RS_BLOCK_LEN 255
 #define RS_DATA_LEN 223
-#define RS_NUM_ROOTS 32
+#define RS_NUM_ROOTS 16
 
 // Antenna
 #define MAX_TXT_FILE_SIZE 8191
