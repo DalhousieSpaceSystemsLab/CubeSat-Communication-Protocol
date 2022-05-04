@@ -18,6 +18,7 @@
 #define REQ_LISTEN_FILE "FF"
 #define REQ_GET_FILE "FR"
 #define REQ_GET_LS "LS"
+#define REQ_TAKE_PICTURE "TP"
 
 // Files
 #define FILE_BASIC_TELEMETRY "telemetry.txt"
@@ -217,6 +218,12 @@ int main(int argc, char *argv[]) {
           // Listen for incoming file
           if (antenna_fread(FILE_INCOMING) == -1) {
             printf("[!] Failed to read incoming file\n");
+            continue;
+          }
+        } else if (strncmp(req, REQ_TAKE_PICTURE, 2) == 0) {
+          // Send request
+          if (antenna_write(REQ_TAKE_PICTURE, 2) == -1) {
+            printf("[!] Failed to make request\n");
             continue;
           }
         } else {
