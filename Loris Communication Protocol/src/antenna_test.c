@@ -16,10 +16,15 @@
 #define REQ_ENABLE_RAVEN "F6"
 #define REQ_FWD_COMMAND "CC"
 #define REQ_LISTEN_FILE "FF"
+#define REQ_GET_FILE "FR"
+#define REQ_GET_LS "LS"
 
 // Files
 #define FILE_BASIC_TELEMETRY "telemetry.txt"
 #define FILE_INCOMING "incoming.txt"
+#define FILE_LS_INDEX "ls_index.txt"
+#define MAX_FILENAME_LEN 64
+#define FILE_NOT_FOUND "!!FNF!!"
 
 void *monitor_requests(void *data);
 
@@ -55,6 +60,8 @@ int main(int argc, char *argv[]) {
     pthread_t monitor_requests_thread;
     char req[2];
     char userreq[2];
+    char filename[MAX_FILENAME_LEN];
+    char filename_local[MAX_FILENAME_LEN];
 
     printf(
         "[?] Read or write (r/w) or encoded (R/W) or make a file request (f/F) "
@@ -149,20 +156,67 @@ int main(int argc, char *argv[]) {
             continue;
           }
         } else if (strncmp(req, REQ_LISTEN_FILE, 2) == 0) {
+          // Ask user to file to send
+          printf("[?] Enter the path of the file you'd like to send (local): ");
+          // fgets(file_path, 256, stdin);
+          scanf(" %s", filename_local);
+          printf("[?] Enter the target filename to save (remote): ");
+          // fgets(file_path, 256, stdin);
+          scanf(" %s", filename);
+
           // Make request
           if (antenna_write(REQ_LISTEN_FILE, 2) == -1) {
             printf("[!] Failed to make request\n");
             continue;
           }
 
-          // Ask user to file to send
-          printf("[?] Enter the path of the file you'd like to send: ");
-          // fgets(file_path, 256, stdin);
-          scanf(" %s", file_path);
+          // Send filename
+          if (antenna_write(filename, MAX_FILENAME_LEN) == -1) {
+            printf("[!] Failed to send remote filename\n");
+            continue;
+          }
 
           // Send file
-          if (antenna_fwrite(file_path) == -1) {
+          if (antenna_fwrite(filename_local) == -1) {
             printf("[!] Failed to send plaintext file over the antenna\n");
+            continue;
+          }
+        } else if (strncmp(req, REQ_GET_FILE, 2) == 0) {
+          // Get desired filename
+          printf(
+              "[?] Enter the filename or path you would like to request "
+              "(remote): ");
+          scanf(" %s", filename);
+          printf("[?] Enter the filename to save (local): ");
+          scanf(" %s", filename_local);
+
+          // Make request
+          if (antenna_write(REQ_GET_FILE, 2) == -1) {
+            printf("[!] Failed to make request\n");
+            continue;
+          }
+
+          // Send desired filename
+          if (antenna_write(filename, MAX_FILENAME_LEN) == -1) {
+            printf("[!] Failed to forward filename\n");
+            continue;
+          }
+
+          // Listen for incoming file
+          if (antenna_fread(filename_local) == -1) {
+            printf("[!] Failed to read incoming file\n");
+            continue;
+          }
+        } else if (strncmp(req, REQ_GET_LS, 2) == 0) {
+          // Send request
+          if (antenna_write(REQ_GET_LS, 2) == -1) {
+            printf("[!] Failed to make request\n");
+            continue;
+          }
+
+          // Listen for incoming file
+          if (antenna_fread(FILE_INCOMING) == -1) {
+            printf("[!] Failed to read incoming file\n");
             continue;
           }
         } else {
