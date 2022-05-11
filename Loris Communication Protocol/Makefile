@@ -1,11 +1,12 @@
 CC=arm-none-linux-gnueabihf-gcc
-INCLUDE=include
+INCLUDE=-Iinclude -Irscode-master
 SRCFOLDER=src
 SRC=$(SRCFOLDER)/main.c
 SRC_TEST:=$(wildcard $(SRCFOLDER)/antenna*.c)
 # SRC_FIFO:=$(wildcard $(SRCFOLDER)/fifo*.c) 
 # SRC_FIFO=$(SRCFOLDER)/fifo.c $(SRCFOLDER)/fifo-emulation.c $(SRCFOLDER)/antenna.c $(SRCFOLDER)/antenna_packet.c
 SRC_FIFO=$(wildcard $(SRCFOLDER)/fifo*.c) $(filter-out $(SRCFOLDER)/antenna_test.c, $(wildcard $(SRCFOLDER)/antenna*.c))
+LDFLAGS=-L. -lcorrect -lpthread -lecc
 TARGET=lcp
 TEST_TARGET=antenna_test
 TEST_TARGET_PC=antenna_test_pc
@@ -16,7 +17,7 @@ LIBCORRECT_BUILD_PATH_VANILLA=libcorrect/build-x86
 .PHONY: all correct correct-vanilla obc obc2 test clean
 
 all:
-	$(CC) -o $(TARGET).bin -I $(INCLUDE) $(SRC) -L. -l correct
+	$(CC) -o $(TARGET).bin $(INCLUDE) $(SRC) -L. -l correct
 
 correct:
 	cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain.cmake -B $(LIBCORRECT_BUILD_PATH) -S libcorrect
@@ -30,14 +31,22 @@ correct-vanilla:
 
 test: test-pc test-arm
 
-test-arm: correct
-	$(CC) -o $(TEST_TARGET).bin -I $(INCLUDE) $(SRC_TEST) -L. -lcorrect -lpthread
+test-arm: correct rscode-arm
+	$(CC) -o $(TEST_TARGET).bin $(INCLUDE) $(SRC_TEST) $(LDFLAGS)
 
-test-pc: correct-vanilla
-	gcc -static -g -o $(TEST_TARGET_PC).bin -I$(INCLUDE) $(SRC_TEST) -L. -lcorrect -lpthread
+test-pc: correct-vanilla rscode-pc
+	gcc -static -g -o $(TEST_TARGET_PC).bin $(INCLUDE) $(SRC_TEST) $(LDFLAGS)
 
 fifo: correct-vanilla
-	gcc -g -o $(FIFO_TARGET).bin -I $(INCLUDE) $(SRC_FIFO) -L. -l correct -l pthread
+	gcc -g -o $(FIFO_TARGET).bin $(INCLUDE) $(SRC_FIFO) -L. -l correct -l pthread
+
+rscode-arm: clean-rscode
+	make -C rscode-master CC=arm-none-linux-gnueabihf-gcc
+	cp rscode-master/libecc.a .
+
+rscode-pc: clean-rscode
+	make -C rscode-master
+	cp rscode-master/libecc.a .
 
 obc: correct test
 	scp $(TEST_TARGET).bin root@173.212.68.129:/home/root
@@ -45,5 +54,8 @@ obc: correct test
 obc2: correct test
 	scp -P 2222 $(TEST_TARGET).bin root@173.212.68.129:/home/root
 
-clean:
+clean: clean-rscode
 	rm -rf $(LIBCORRECT_BUILD_PATH) $(LIBCORRECT_BUILD_PATH_VANILLA) libcorrect.a $(FIFO_TARGET) $(TEST_TARGET) $(TEST_TARGET_PC)
+
+clean-rscode:
+	make -C rscode-master clean
