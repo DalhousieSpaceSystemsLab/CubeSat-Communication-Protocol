@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include <string.h>
 
+// Settings
+#define PATH_TO_ANTENNA_DEV "/dev/colibri-uartb"
+
 // Requests
 #define REQ_BASIC_TELEMETRY "A1"
 #define REQ_LARGE_TELEMETRY "B2"
@@ -19,6 +22,8 @@
 #define REQ_GET_FILE "FR"
 #define REQ_GET_LS "LS"
 #define REQ_TAKE_PICTURE "TP"
+#define REQ_ENCODE_FILE "EF"
+#define REQ_DECODE_FILE "DF"
 
 // Files
 #define FILE_BASIC_TELEMETRY "telemetry.txt"
@@ -66,8 +71,7 @@ int main(int argc, char *argv[]) {
 
     printf(
         "[?] Read or write (r/w) or encoded (R/W) or make a file request (f/F) "
-        "or autonomous mode (x/X) or start the groundstation "
-        "daemon (Z)");
+        "or autonomous mode (x/X) or encode/decode a file (e/d): ");
     scanf(" %c", &choice);
 
     switch (choice) {
@@ -226,6 +230,42 @@ int main(int argc, char *argv[]) {
             printf("[!] Failed to make request\n");
             continue;
           }
+        } else if (strncmp(req, REQ_ENCODE_FILE, 2) == 0) {
+          // Get desired filename
+          printf(
+              "[?] Enter the filename or path you would like to encode "
+              "(remote): ");
+          scanf(" %s", filename);
+
+          // Send request
+          if (antenna_write(REQ_ENCODE_FILE, 2) == -1) {
+            printf("[!] Failed to make request\n");
+            continue;
+          }
+
+          // Send filename
+          if (antenna_write(filename, MAX_FILENAME_LEN) == -1) {
+            printf("[!] Failed to forward filename\n");
+            continue;
+          }
+        } else if (strncmp(req, REQ_DECODE_FILE, 2) == 0) {
+          // Get desired filename
+          printf(
+              "[?] Enter the filename or path you would like to decode "
+              "(remote): ");
+          scanf(" %s", filename);
+
+          // Send request
+          if (antenna_write(REQ_DECODE_FILE, 2) == -1) {
+            printf("[!] Failed to make request\n");
+            continue;
+          }
+
+          // Send filename
+          if (antenna_write(filename, MAX_FILENAME_LEN) == -1) {
+            printf("[!] Failed to forward filename\n");
+            continue;
+          }
         } else {
           printf("[!] {%c%c} is not a recognized request\n", req[0], req[1]);
           break;
@@ -354,6 +394,18 @@ int main(int argc, char *argv[]) {
         // fifo_init(1, )
         break;
 
+      case 'e':
+      case 'E':
+        // Get desired filename
+        printf("[?] Enter the filename or path you would like to encode: ");
+        scanf(" %s", filename);
+
+        // Encode file
+
+        break;
+      case 'd':
+      case 'D':
+        break;
       default:
         printf("[!] %c is not a valid option\n", choice);
         continue;

@@ -48,6 +48,14 @@ rscode-pc: clean-rscode
 	make -C rscode-master
 	cp rscode-master/libecc.a .
 
+rscode-arm: clean-rscode
+	make -C rscode-master CC=arm-none-linux-gnueabihf-gcc
+	cp rscode-master/libecc.a .
+
+rscode-pc: clean-rscode
+	make -C rscode-master
+	cp rscode-master/libecc.a .
+
 obc: correct test
 	scp $(TEST_TARGET).bin root@173.212.68.129:/home/root
 
