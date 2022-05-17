@@ -1,3 +1,6 @@
 [submodule "Loris Communication Protocol/libcorrect"]
 	path = Loris Communication Protocol/libcorrect
 	url = https://github.com/quiet/libcorrect
+[submodule "Loris Communication Protocol/ezpwd"]
+	path = Loris Communication Protocol/ezpwd
+	url = git@github.com:pjkundert/ezpwd-reed-solomon.git

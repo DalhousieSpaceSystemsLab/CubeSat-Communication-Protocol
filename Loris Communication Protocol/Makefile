@@ -1,5 +1,5 @@
 CC=arm-none-linux-gnueabihf-gcc
-INCLUDE=-Iinclude -Irscode-master
+INCLUDE=-Iinclude -Irscode-master -Iezpwd/c++
 SRCFOLDER=src
 SRC=$(SRCFOLDER)/main.c
 SRC_TEST:=$(wildcard $(SRCFOLDER)/antenna*.c)
@@ -14,7 +14,7 @@ FIFO_TARGET=fifo
 LIBCORRECT_BUILD_PATH=libcorrect/build-arm32
 LIBCORRECT_BUILD_PATH_VANILLA=libcorrect/build-x86
 
-.PHONY: all correct correct-vanilla obc obc2 test clean
+.PHONY: all correct correct-vanilla obc obc2 test clean clean-rscode
 
 all:
 	$(CC) -o $(TARGET).bin $(INCLUDE) $(SRC) -L. -l correct
@@ -29,7 +29,9 @@ correct-vanilla:
 	cmake --build $(LIBCORRECT_BUILD_PATH_VANILLA)
 	cp $(LIBCORRECT_BUILD_PATH_VANILLA)/lib/libcorrect.a .
 
-test: test-pc test-arm
+test:
+	make test-pc
+	make test-arm
 
 test-arm: correct rscode-arm
 	$(CC) -o $(TEST_TARGET).bin $(INCLUDE) $(SRC_TEST) $(LDFLAGS)
@@ -67,3 +69,4 @@ clean: clean-rscode
 
 clean-rscode:
 	make -C rscode-master clean
+	rm libecc.a
