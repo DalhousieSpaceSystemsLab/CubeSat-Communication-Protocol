@@ -112,7 +112,8 @@ int antenna_write_fd(int fd, const char *data, size_t data_len) {
       return -1;
     }
     total_bytes_written += bytes_to_write;
-    usleep(WRITE_DELAY);
+    // usleep(WRITE_DELAY);
+    tcdrain(fd);
   }
 
   // Write bytes to antenna
@@ -376,9 +377,10 @@ int antenna_read_rs(char *buffer, size_t read_len, int read_mode) {
   return antenna_read_rs_fd(uartfd, buffer, read_len, read_mode);
 }
 
-static inline void display_progress(size_t n, size_t total, int width) {
+static inline void display_progress(size_t n, size_t total, int width,
+                                    char *what) {
   int progress = width * n / total;
-  printf("\rDownload progress (%lu/%lu): [", n, total);
+  printf("\r%s progress (%lu/%lu): [", what, n, total);
   for (int x = 0; x < progress; x++) printf("#");
   for (int x = progress; x < width; x++) printf("-");
   printf("]");
@@ -448,7 +450,7 @@ static int _antenna_fwrite_fd(int antenna_method, int fd,
     if (bytes_read < FILE_BUFFER_SIZE) eof = 1;
 
     // Display progress
-    display_progress(total_bytes_read, file_size, PROGRESS_BAR_WIDTH);
+    display_progress(total_bytes_read, file_size, PROGRESS_BAR_WIDTH, "Upload");
   }
 
   // DEBUG
@@ -633,7 +635,8 @@ static int _antenna_fread_fd(int antenna_mode, int fd, const char *file_path) {
     total_bytes_read += bytes_read;
 
     // Display progress
-    display_progress(total_bytes_read, file_size, PROGRESS_BAR_WIDTH);
+    display_progress(total_bytes_read, file_size, PROGRESS_BAR_WIDTH,
+                     "Download");
 
     // DEBUG
     // printf("[DEBUG] Remaining bytes: %d\n", bytes_remaining);
