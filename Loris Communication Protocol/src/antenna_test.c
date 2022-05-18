@@ -11,7 +11,7 @@
 
 void *monitor_requests(void *data);
 
-int main(int argc, char *argv[]) {
+main(int argc, char *argv[]) {
   // Check argc
   if (argc != 2) {
     printf("[!] Invalid number of arguments. Try ./antenna_test PATH\n");
