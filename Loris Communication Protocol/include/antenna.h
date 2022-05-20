@@ -18,7 +18,9 @@
 #include <string.h>
 #include <sys/select.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <termios.h>
+#include <time.h>
 #include <unistd.h>
 
 // Settings //

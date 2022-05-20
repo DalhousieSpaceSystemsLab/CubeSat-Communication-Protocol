@@ -426,7 +426,13 @@ static int _antenna_fwrite_fd(int antenna_method, int fd,
   int bytes_read = 0;
   size_t total_bytes_read = 0;
   int eof = 0;
+  // clock_t cycle_start, cycle_end, average = 0;
+  struct timeval cycle_start, cycle_end, average = {.tv_sec = 0, .tv_usec = 0};
   while (!eof) {
+    // DEBUG: timer
+    // cycle_start = clock();
+    gettimeofday(&cycle_start, NULL);
+
     if (antenna_method == ANTENNA_ENCODE_RS) {
       bytes_read = fread(buffer_rs, sizeof(char), RS_DATA_LEN, f);
       if (antenna_write_rs_fd(fd, buffer_rs, bytes_read) == -1) {
@@ -452,7 +458,20 @@ static int _antenna_fwrite_fd(int antenna_method, int fd,
 
     // Display progress
     display_progress(total_bytes_read, file_size, PROGRESS_BAR_WIDTH, "Upload");
+
+    // DEBUG: timer
+    // cycle_end = clock();
+    gettimeofday(&cycle_end, NULL);
+    // average = average / 2 + (cycle_end - cycle_start) / 2;
+    average.tv_sec =
+        average.tv_sec / 2 + (cycle_end.tv_sec - cycle_start.tv_sec) / 2;
+    average.tv_usec =
+        average.tv_usec / 2 + (cycle_end.tv_usec - cycle_start.tv_usec) / 2;
   }
+
+  // DEBUG
+  printf("[i] Average time per cycle %lds and %ldµs\n", average.tv_sec,
+         average.tv_usec);
 
   // DEBUG
   // printf("[DEBUG] Done!\n");
