@@ -139,6 +139,22 @@ main(int argc, char *argv[]) {
             printf("[!] failed to fread incoming file\n");
             continue;
           }
+        } else if (strncmp(req, REQ_FWD_COMMAND, 2) == 0) {
+          // Get command to forward
+          printf("[?] Enter the command to forward (remote): ");
+          scanf(" %s", filename);
+
+          // Make request
+          if (antenna_write(REQ_FWD_COMMAND, 2) == -1) {
+            printf("[!] Failed to make request\n");
+            continue;
+          }
+
+          // Send desired filename
+          if (antenna_write(filename, MAX_FILENAME_LEN) == -1) {
+            printf("[!] Failed to forward command\n");
+            continue;
+          }
         } else if (strncmp(req, REQ_LISTEN_FILE, 2) == 0) {
           // Ask user to file to send
           printf("[?] Enter the path of the file you'd like to send (local): ");
@@ -223,7 +239,8 @@ main(int argc, char *argv[]) {
             continue;
           }
           char *nextline = NULL;
-          while (getline(&nextline, 0, ls_fp) != -1) {
+          int n = 64;
+          while (getline(&nextline, &n, ls_fp) != -1) {
             printf("%s", nextline);
           }
           fclose(ls_fp);
