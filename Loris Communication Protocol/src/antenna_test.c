@@ -259,6 +259,36 @@ main(int argc, char *argv[]) {
           } else {
             printf("[i] Request sent!\n");
           }
+        } else if (strncmp(req, REQ_REMOVE, 2) == 0) {
+          // Get desired filename
+          printf(
+              "[?] Enter the filename or path you would like to remove "
+              "(remote): ");
+          scanf(" %s", filename);
+
+          // Warning
+          printf("!!!!!!!!!!! ARE YOU SURE? !!!!!!!!!!!!\n");
+          printf(
+              "It would be much better to move stuff (cant guarantee the "
+              "absolutely correct filename will be passed).\n");
+          printf("(y/n): ");
+          char iamsure;
+          scanf(" %c", &iamsure);
+          if (iamsure == 'y') {
+            // Send request
+            if (antenna_write(REQ_REMOVE, 2) == -1) {
+              printf("[!] Failed to make request\n");
+              continue;
+            }
+
+            // Send filename
+            if (antenna_write(filename, MAX_FILENAME_LEN) == -1) {
+              printf("[!] Failed to forward filename\n");
+              continue;
+            }
+          } else {
+            continue;
+          }
         } else {
           printf("[!] {%c%c} is not a recognized request\n", req[0], req[1]);
           break;
