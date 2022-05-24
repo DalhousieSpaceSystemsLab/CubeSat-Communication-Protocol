@@ -45,6 +45,7 @@ main(int argc, char *argv[]) {
     char userreq[2];
     char filename[MAX_FILENAME_LEN];
     char filename_local[MAX_FILENAME_LEN];
+    char filename_dest[MAX_FILENAME_LEN];
 
     printf(
         "[?] Read or write (r/w) or encoded (R/W) or make a file request (f/F) "
@@ -287,6 +288,32 @@ main(int argc, char *argv[]) {
               continue;
             }
           } else {
+            continue;
+          }
+        } else if (strncmp(req, REQ_MOVE, 2) == 0) {
+          // Get desired filename
+          printf(
+              "[?] Enter the filename source "
+              "(remote): ");
+          scanf(" %s", filename);
+          printf(
+              "[?] Enter the filename destination "
+              "(remote): ");
+          scanf(" %s", filename_dest);
+
+          // Send request
+          if (antenna_write(REQ_MOVE, 2) == -1) {
+            printf("[!] Failed to make request\n");
+            continue;
+          }
+
+          // Send filenames
+          if (antenna_write(filename, MAX_FILENAME_LEN) == -1) {
+            printf("[!] Failed to forward filename\n");
+            continue;
+          }
+          if (antenna_write(filename_dest, MAX_FILENAME_LEN) == -1) {
+            printf("[!] Failed to forward filename\n");
             continue;
           }
         } else {
