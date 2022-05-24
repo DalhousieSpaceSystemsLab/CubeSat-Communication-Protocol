@@ -191,9 +191,21 @@ main(int argc, char *argv[]) {
             continue;
           }
         } else if (strncmp(req, REQ_GET_LS, 2) == 0) {
+          // Get desired directory
+          printf(
+              "[?] Enter the directory you would like to LS "
+              "(remote): ");
+          scanf(" %s", filename);
+
           // Send request
           if (antenna_write(REQ_GET_LS, 2) == -1) {
             printf("[!] Failed to make request\n");
+            continue;
+          }
+
+          // Send directory
+          if (antenna_write(filename, MAX_FILENAME_LEN) == -1) {
+            printf("[!] Failed to pass directory\n");
             continue;
           }
 
