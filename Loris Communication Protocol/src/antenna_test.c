@@ -46,6 +46,7 @@ main(int argc, char *argv[]) {
     char filename[MAX_FILENAME_LEN];
     char filename_local[MAX_FILENAME_LEN];
     char filename_dest[MAX_FILENAME_LEN];
+    FILE *ls_fp = NULL;
 
     printf(
         "[?] Read or write (r/w) or encoded (R/W) or make a file request (f/F) "
@@ -210,10 +211,24 @@ main(int argc, char *argv[]) {
           }
 
           // Listen for incoming file
-          if (antenna_fread(FILE_INCOMING) == -1) {
+          if (antenna_fread(FILE_LS_INDEX) == -1) {
             printf("[!] Failed to read incoming file\n");
             continue;
           }
+
+          // Display file contents
+          ls_fp = fopen(FILE_LS_INDEX, "r");
+          if (!ls_fp) {
+            printf("[!] Failed to open ls index for reading.\n");
+            continue;
+          }
+          char *nextline = NULL;
+          while (getline(&nextline, 0, ls_fp) != -1) {
+            printf("%s", nextline);
+          }
+          fclose(ls_fp);
+          free(nextline);
+
         } else if (strncmp(req, REQ_TAKE_PICTURE, 2) == 0) {
           // Send request
           if (antenna_write(REQ_TAKE_PICTURE, 2) == -1) {
