@@ -142,7 +142,7 @@ main(int argc, char *argv[]) {
         } else if (strncmp(req, REQ_FWD_COMMAND, 2) == 0) {
           // Get command to forward
           printf("[?] Enter the command to forward (remote): ");
-          scanf(" %s", filename);
+          scanf(" %[^\n]%*c", filename);
 
           // Make request
           if (antenna_write(REQ_FWD_COMMAND, 2) == -1) {
