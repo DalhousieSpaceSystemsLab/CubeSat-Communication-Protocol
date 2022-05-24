@@ -39,8 +39,8 @@ int antenna_init(const char *path) {
   tty.c_oflag &= ~OPOST;
 
   /* fetch bytes as they become available */
-  tty.c_cc[VMIN] = 1;
-  tty.c_cc[VTIME] = 5;
+  tty.c_cc[VMIN] = TERMIOS_VMIN;
+  tty.c_cc[VTIME] = TERMIOS_VTIME;
 
   if (tcsetattr(uartfd, TCSANOW, &tty) != 0) {
     printf("Error from tcsetattr: %s\n", strerror(errno));
@@ -87,11 +87,11 @@ int antenna_init(const char *path) {
  */
 int antenna_write_fd(int fd, const char *data, size_t data_len) {
   // Prepare packet
-  // struct antenna_packet p;
-  // if (antenna_packet_new(&p) < 0) {
-  //   printf("[!] Failed to create new packet\n");
-  //   return -1;
-  // }
+  struct antenna_packet p;
+  if (antenna_packet_new(&p) < 0) {
+    printf("[!] Failed to create new packet\n");
+    return -1;
+  }
 
   // DEBUG
   // printf("[DEBUG] Waiting for fd to be ready...\n");
@@ -113,9 +113,7 @@ int antenna_write_fd(int fd, const char *data, size_t data_len) {
     }
     total_bytes_written += bytes_to_write;
     usleep(WRITE_DELAY);
-    // tcdrain(fd);
   }
-  usleep(INTER_WRITE_DELAY);
 
   // Write bytes to antenna
   // if (write(fd, data, data_len) < data_len) {
@@ -222,9 +220,11 @@ int antenna_write_rs(const char *data, size_t data_len) {
  * @param buffer Output buffer array for incoming bytes.
  * @param read_len Read UP TO or block UNTIL this many bytes read.
  * @param read_mode Set to READ_MODE_UPTO or READ_MODE_UNTIL
- * @return number of bytes read or < 0 for error .
+ * @return number of bytes read or < 0 for error or TIMEOUT_OCCURED for timeout.
  */
 int antenna_read_fd(int fd, char *buffer, size_t read_len, int read_mode) {
+  TIMEOUT_START();
+
   // Create placeholders for reading
   size_t bytes_read = 0;
 
@@ -250,6 +250,8 @@ int antenna_read_fd(int fd, char *buffer, size_t read_len, int read_mode) {
 
       // Update bytes read so far
       bytes_read += new_bytes_read;
+      TIMEOUT_UPDATE();
+      TIMEOUT_IF(READ_OP_TIMEOUT, break);
     }
   } else {
     printf("[!] Invalid read mode. Try READ_MODE_UPTO or READ_MODE_UNTIL\n");
@@ -257,6 +259,7 @@ int antenna_read_fd(int fd, char *buffer, size_t read_len, int read_mode) {
   }
 
   // done
+  RETURN_IF_TIMEOUT();
   return bytes_read;
 }
 
@@ -269,7 +272,7 @@ int antenna_read_fd(int fd, char *buffer, size_t read_len, int read_mode) {
  * @param buffer Output buffer array for incoming bytes.
  * @param read_len Read UP TO or block UNTIL this many bytes read.
  * @param read_mode Set to READ_MODE_UPTO or READ_MODE_UNTIL
- * @return number of bytes read or < 0 for error.
+ * @return number of bytes read or < 0 for error or TIMEOUT_OCCURED for timeout.
  */
 int antenna_read(char *buffer, size_t read_len, int read_mode) {
   // Make sure file desc initialized
@@ -426,13 +429,7 @@ static int _antenna_fwrite_fd(int antenna_method, int fd,
   int bytes_read = 0;
   size_t total_bytes_read = 0;
   int eof = 0;
-  // clock_t cycle_start, cycle_end, average = 0;
-  struct timeval cycle_start, cycle_end, average = {.tv_sec = 0, .tv_usec = 0};
   while (!eof) {
-    // DEBUG: timer
-    // cycle_start = clock();
-    gettimeofday(&cycle_start, NULL);
-
     if (antenna_method == ANTENNA_ENCODE_RS) {
       bytes_read = fread(buffer_rs, sizeof(char), RS_DATA_LEN, f);
       if (antenna_write_rs_fd(fd, buffer_rs, bytes_read) == -1) {
@@ -458,20 +455,7 @@ static int _antenna_fwrite_fd(int antenna_method, int fd,
 
     // Display progress
     display_progress(total_bytes_read, file_size, PROGRESS_BAR_WIDTH, "Upload");
-
-    // DEBUG: timer
-    // cycle_end = clock();
-    gettimeofday(&cycle_end, NULL);
-    // average = average / 2 + (cycle_end - cycle_start) / 2;
-    average.tv_sec =
-        average.tv_sec / 2 + (cycle_end.tv_sec - cycle_start.tv_sec) / 2;
-    average.tv_usec =
-        average.tv_usec / 2 + (cycle_end.tv_usec - cycle_start.tv_usec) / 2;
   }
-
-  // DEBUG
-  printf("[i] Average time per cycle %lds and %ldµs\n", average.tv_sec,
-         average.tv_usec);
 
   // DEBUG
   // printf("[DEBUG] Done!\n");
@@ -545,6 +529,7 @@ int antenna_fwrite_rs(const char *file_path) {
 
 static int _antenna_fread_fd(int antenna_mode, int fd, const char *file_path) {
   int status = 0;
+  TIMEOUT_START();
 
   // DEBUG
   // printf("[DEBUG] Waiting for file notice...\n");
@@ -561,10 +546,13 @@ static int _antenna_fread_fd(int antenna_mode, int fd, const char *file_path) {
         return -1;
       }
     } else {
-      if (antenna_read_fd(fd, notice, FILE_NOTICE_LEN, READ_MODE_UNTIL) == -1) {
+      int res = 0;
+      if ((res = antenna_read_fd(fd, notice, FILE_NOTICE_LEN,
+                                 READ_MODE_UNTIL)) == -1) {
         printf("[!] Failed to read from antenna\n");
         return -1;
       }
+      IF_TIMEOUT(res, return TIMEOUT_OCCURED);
     }
 
     // Check if file notice received
@@ -600,6 +588,9 @@ static int _antenna_fread_fd(int antenna_mode, int fd, const char *file_path) {
   int bytes_to_read = 0;
   int bytes_remaining = 0;
   while (total_bytes_read < file_size) {
+    TIMEOUT_UPDATE();
+    TIMEOUT_IF(READ_OP_TIMEOUT, goto cleanup);
+
     if (antenna_mode == ANTENNA_ENCODE_RS) {
       bytes_remaining = file_size - total_bytes_read;
       bytes_to_read =
@@ -610,6 +601,14 @@ static int _antenna_fread_fd(int antenna_mode, int fd, const char *file_path) {
         status = -1;
         goto cleanup;
       }
+      // NOTE: In case the incoming stream of file bytes is interrupted, delayed
+      // or missing.
+      // 1. The file has obvious not transmitted in its entirety, but most of it
+      // could be there.
+      // 2. Uploads to the satellite must be pristine; but downloads can be
+      // partial.
+      // For now, interpret missing data or read timeout as file failure
+      IF_TIMEOUT(bytes_read, status = TIMEOUT_OCCURED; goto cleanup);
 
       // Handle no bytes read clause
       if (bytes_read == 0) {
@@ -635,6 +634,16 @@ static int _antenna_fread_fd(int antenna_mode, int fd, const char *file_path) {
         status = -1;
         goto cleanup;
       }
+
+      // NOTE: In case the incoming stream of file bytes is interrupted, delayed
+      // or missing.
+      // 1. The file has obvious not transmitted in its entirety, but most of it
+      // could be there.
+      // 2. Uploads to the satellite must be pristine; but downloads can be
+      // partial.
+      // For now, interpret missing data or read timeout as file failure
+      IF_TIMEOUT(bytes_read, status = TIMEOUT_OCCURED; goto cleanup);
+
       // DEBUG
       // printf("[DEBUG] %d bytes read!\n", bytes_read);
 
@@ -667,6 +676,7 @@ static int _antenna_fread_fd(int antenna_mode, int fd, const char *file_path) {
 cleanup:
   fclose(fp);
 
+  RETURN_IF_TIMEOUT();
   return status;
 }
 
@@ -675,7 +685,7 @@ cleanup:
  *
  * @param fd File descriptor to use
  * @param file_path Path to incoming file destination
- * @return 0 on success, -1 on error
+ * @return 0 on success, -1 on error, TIMEOUT_OCCURED on timeout
  */
 int antenna_fread_fd(int fd, const char *file_path) {
   return _antenna_fread_fd(ANTENNA_ENCODE_NONE, fd, file_path);
@@ -685,7 +695,7 @@ int antenna_fread_fd(int fd, const char *file_path) {
  * @brief Receive file over the air.
  *
  * @param file_path Path to incoming file destination
- * @return 0 on success, -1 on error
+ * @return 0 on success, -1 on error, TIMEOUT_OCCURED on timeout
  */
 int antenna_fread(const char *file_path) {
   // Make sure file desc initialized

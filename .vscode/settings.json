@@ -1,6 +1,7 @@
 {
   "files.associations": {
     "stdio.h": "c",
-    "antenna_global.h": "c"
+    "antenna_global.h": "c",
+    "termios.h": "c"
   }
 }
