@@ -243,6 +243,22 @@ main(int argc, char *argv[]) {
             printf("[!] Failed to forward filename\n");
             continue;
           }
+        } else if (strncmp(req, REQ_SHUTDOWN, 2) == 0) {
+          // Send request
+          if (antenna_write(REQ_SHUTDOWN, 2) == -1) {
+            printf("[!] Failed to make request\n");
+            continue;
+          } else {
+            printf("[i] Request sent!\n");
+          }
+        } else if (strncmp(req, REQ_REBOOT, 2) == 0) {
+          // Send request
+          if (antenna_write(REQ_REBOOT, 2) == -1) {
+            printf("[!] Failed to make request\n");
+            continue;
+          } else {
+            printf("[i] Request sent!\n");
+          }
         } else {
           printf("[!] {%c%c} is not a recognized request\n", req[0], req[1]);
           break;
