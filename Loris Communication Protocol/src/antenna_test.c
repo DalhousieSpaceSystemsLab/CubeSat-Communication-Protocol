@@ -135,10 +135,49 @@ main(int argc, char *argv[]) {
             continue;
           }
 
-          if (antenna_fread(FILE_INCOMING) == -1) {
+          if (antenna_fread(FILE_BASIC_TELEMETRY) == -1) {
             printf("[!] failed to fread incoming file\n");
             continue;
           }
+
+          // Display file contents
+          ls_fp = fopen(FILE_BASIC_TELEMETRY, "r");
+          if (!ls_fp) {
+            printf("[!] Failed to open small telemetry file for reading.\n");
+            continue;
+          }
+          char *nextline = NULL;
+          int n = 64;
+          while (getline(&nextline, &n, ls_fp) != -1) {
+            printf("%s", nextline);
+          }
+          fclose(ls_fp);
+          free(nextline);
+        } else if (strncmp(req, REQ_LARGE_TELEMETRY, 2) == 0) {
+          if (antenna_write(REQ_LARGE_TELEMETRY, 2) == -1) {
+            printf("[!] Failed to make request\n");
+            continue;
+          }
+
+          if (antenna_fread(FILE_LARGE_TELEMETRY) == -1) {
+            printf("[!] failed to fread incoming file\n");
+            continue;
+          }
+
+          // Display file contents
+          ls_fp = fopen(FILE_LARGE_TELEMETRY, "r");
+          if (!ls_fp) {
+            printf("[!] Failed to open large telemetry for reading.\n");
+            continue;
+          }
+          char *nextline = NULL;
+          int n = 64;
+          while (getline(&nextline, &n, ls_fp) != -1) {
+            printf("%s", nextline);
+          }
+          fclose(ls_fp);
+          free(nextline);
+
         } else if (strncmp(req, REQ_FWD_COMMAND, 2) == 0) {
           // Get command to forward
           printf("[?] Enter the command to forward (remote): ");
