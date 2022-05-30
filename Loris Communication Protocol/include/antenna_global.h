@@ -34,6 +34,7 @@
 #define REQ_REMOVE "RM"
 #define REQ_MOVE "MV"
 #define REQ_BURNWIRE "BW"
+#define REQ_ENABLE_ACS "AC"
 
 // Files
 #define FILE_BASIC_TELEMETRY "telemetry-small.txt"

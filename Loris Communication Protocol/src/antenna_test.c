@@ -407,6 +407,15 @@ main(int argc, char *argv[]) {
           }
 
           printf("[i] Burnwire request successfully sent!\n\n");
+        } else if (strncmp(req, REQ_ENABLE_ACS, 2) == 0) {
+          // Send request
+          if (antenna_write(REQ_ENABLE_ACS, 2) == -1) {
+            printf("[!] Failed to make request\n");
+            continue;
+          }
+
+          printf("[i] ACS enable request successfully sent!\n\n");
+
         } else {
           printf("[!] {%c%c} is not a recognized request\n", req[0], req[1]);
           break;
