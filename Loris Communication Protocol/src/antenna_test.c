@@ -399,6 +399,14 @@ main(int argc, char *argv[]) {
             printf("[!] Failed to forward filename\n");
             continue;
           }
+        } else if (strncmp(req, REQ_BURNWIRE, 2) == 0) {
+          // Send request
+          if (antenna_write(REQ_BURNWIRE, 2) == -1) {
+            printf("[!] Failed to make request\n");
+            continue;
+          }
+
+          printf("[i] Burnwire request successfully sent!\n\n");
         } else {
           printf("[!] {%c%c} is not a recognized request\n", req[0], req[1]);
           break;
