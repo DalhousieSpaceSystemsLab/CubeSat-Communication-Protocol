@@ -10,11 +10,12 @@ LDFLAGS=-L. -lcorrect -lpthread -lecc
 TARGET=lcp
 TEST_TARGET=antenna_test
 TEST_TARGET_PC=antenna_test_pc
+GROUNDSTATION_TARGET=groundstation
 FIFO_TARGET=fifo
 LIBCORRECT_BUILD_PATH=libcorrect/build-arm32
 LIBCORRECT_BUILD_PATH_VANILLA=libcorrect/build-x86
 
-.PHONY: all correct correct-vanilla obc obc2 test clean clean-rscode
+.PHONY: all correct correct-vanilla obc obc2 test groundstation clean clean-rscode
 
 all:
 	$(CC) -o $(TARGET).bin $(INCLUDE) $(SRC) -L. -l correct
@@ -38,6 +39,11 @@ test-arm: correct rscode-arm
 
 test-pc: correct-vanilla rscode-pc
 	gcc -static -g -o $(TEST_TARGET_PC).bin $(INCLUDE) $(SRC_TEST) $(LDFLAGS)
+	gcc -static -g -o $(GROUNDSTATION_TARGET).bin $(INCLUDE) $(SRC_TEST) $(LDFLAGS)
+
+groundstation: correct-vanilla rscode-pc
+	gcc -static -g -o $(GROUNDSTATION_TARGET).bin $(INCLUDE) $(SRC_TEST) $(LDFLAGS)
+
 
 fifo: correct-vanilla
 	gcc -g -o $(FIFO_TARGET).bin $(INCLUDE) $(SRC_FIFO) -L. -l correct -l pthread
