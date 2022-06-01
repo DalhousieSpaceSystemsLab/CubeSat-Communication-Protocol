@@ -11,7 +11,12 @@ static int uartfd = -1;
  */
 int antenna_init(const char *path) {
   if ((uartfd = open(path, O_RDWR | O_NOCTTY | O_SYNC)) < 0) {
-    printf("[!] Failed to open I/O device at %s\n", path);
+    // Check permissions error
+    if (errno == EACCES) {
+      printf("[!] Insufficient privileges. Consider running as root.\n");
+    } else {
+      printf("[!] Failed to open I/O device at %s\n", path);
+    }
     return -1;
   }
 
