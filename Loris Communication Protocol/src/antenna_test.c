@@ -15,6 +15,7 @@
 void *monitor_requests(void *data);
 
 static int display_help();
+static int view_avail_requests();
 
 main(int argc, char *argv[]) {
   // Check argc
@@ -35,10 +36,21 @@ main(int argc, char *argv[]) {
   }
 
   // Init
-  if (antenna_init(argv[1]) < 0) {
-    printf("[!] Failed to init antenna\n");
+  if (antenna_init(ANTENNA_DEV_PATH) < 0) {
+    printf("[!] Failed to init antenna at %s\n", ANTENNA_DEV_PATH);
     return -1;
   }
+
+  printf(
+      "###########################################################\n"
+      "#                  LORIS GROUNDSTATION APP                #\n"
+      "#                          v1.0.0                         #\n"
+      "###########################################################\n"
+      "# Welcome to the LORIS groundstation app.                 #\n"
+      "#                                                         #\n"
+      "# If you're not sure where to start, use the (?) option to#\n"
+      "# see the help page.                                      #\n"
+      "# ------------------------------------------------------- #\n");
 
   // Main loop
   int done = 0;
@@ -65,83 +77,22 @@ main(int argc, char *argv[]) {
     FILE *ls_fp = NULL;
 
     printf(
-        "[?] Read or write (r/w) or encoded (R/W) or make a file request (f/F) "
-        "or autonomous mode (x/X) or encode/decode a file (e/d): ");
+        "# Choose one of the following options:                    #\n"
+        "# (R) -> Start making requests.                           #\n"
+        "# (V) -> View available requests.                         #\n"
+        "# (?) -> View the help page.                              #\n"
+        "# (Q) -> Quit.                                            #\n"
+        "###########################################################\n"
+        "\n"
+        ">> ");
     scanf(" %c", &choice);
 
-    switch (choice) {
-      case 'r':
-        printf("[i] Reading UPTO %d bytes\n", MAX_READ_LEN);
-        if ((data_len = antenna_read(data, MAX_READ_LEN, READ_MODE_UPTO)) < 0) {
-          printf("[!] failed to antenna read UPTO %d bytes\n", MAX_READ_LEN);
-          return -1;
-        }
-        break;
-      case 'R':
-        printf("[?] Will this be encoded (y/n): ");
-        scanf(" %c", &encoded);
-        printf("[?] Read until (u) or UPTO (U): ");
-        scanf(" %c", &choice);
-        printf("[?] How many: ");
-        scanf("%d", &choice_len);
-        if (choice == 'u') {
-          if (encoded == 'y') {
-            printf("[i] Reading UNTIL %d bytes ENCODED...\n", choice_len);
-            if ((data_len =
-                     antenna_read_rs(data, choice_len, READ_MODE_UNTIL)) < 0) {
-              printf("[!] failed to antenna read until %d bytes\n", choice_len);
-              return -1;
-            }
-          } else {
-            printf("[i] Reading UNTIL %d bytes...\n", choice_len);
-            if ((data_len = antenna_read(data, choice_len, READ_MODE_UNTIL)) <
-                0) {
-              printf("[!] failed to antenna read until %d bytes\n", choice_len);
-              return -1;
-            }
-          }
-        } else {
-          if (encoded == 'y') {
-            printf("[i] Reading UPTO %d bytes ENCODED...\n", choice_len);
-            if ((data_len = antenna_read_rs(data, choice_len, READ_MODE_UPTO)) <
-                0) {
-              printf("[!] failed to antenna read upto %d bytes\n", choice_len);
-              return -1;
-            }
-          } else {
-            printf("[i] Reading UPTO %d bytes...\n", choice_len);
-            if ((data_len = antenna_read(data, choice_len, READ_MODE_UPTO)) <
-                0) {
-              printf("[!] failed to antenna read upto %d bytes\n", choice_len);
-              return -1;
-            }
-          }
-        }
-        break;
-      case 'w':
-        printf("[?] Enter message to send: ");
-        scanf(" %s", data);
-        data_len = strlen(data);
-        if (antenna_write(data, data_len) < 0) {
-          printf("[!] failed to antenna write \"%s\" containing %d bytes\n",
-                 data, data_len);
-          return -1;
-        }
-        break;
-      case 'W':
-        printf("[?] Enter message to ENCODE & send: ");
-        scanf(" %s", data);
-        data_len = strlen(data);
-        if (antenna_write_rs(data, data_len) < 0) {
-          printf("[!] failed to antenna write \"%s\" containing %d bytes\n",
-                 data, data_len);
-          return -1;
-        }
-        break;
-
-      // messy. move contents to a function.
-      case 'f':
-        printf("[?] Enter the PLAINTEXT request you would like to make: ");
+    if (choice == 'R' || choice == 'r') {
+      int done = 0;
+      while (!done) {
+        printf(
+            "[?] Enter the PLAINTEXT request you would like to make (e.g.: A1, "
+            "B2, etc): ");
 
         scanf(" %s", req);
 
@@ -151,11 +102,14 @@ main(int argc, char *argv[]) {
             continue;
           }
 
-          if (antenna_fread(FILE_BASIC_TELEMETRY) == -1) {
-            printf("[!] failed to fread incoming file\n");
+          int err;
+          IF_TIMEOUT((err = antenna_fread(FILE_BASIC_TELEMETRY)),
+                     printf("[!] TIMEOUT OCCURED\n");
+                     continue);
+          if (err == -1) {
+            printf("[!] Failed to receive incoming file\n");
             continue;
           }
-
           // Display file contents
           ls_fp = fopen(FILE_BASIC_TELEMETRY, "r");
           if (!ls_fp) {
@@ -175,8 +129,12 @@ main(int argc, char *argv[]) {
             continue;
           }
 
-          if (antenna_fread(FILE_LARGE_TELEMETRY) == -1) {
-            printf("[!] failed to fread incoming file\n");
+          int err;
+          IF_TIMEOUT((err = antenna_fread(FILE_LS_INDEX)),
+                     printf("[!] TIMEOUT OCCURED\n");
+                     continue);
+          if (err == -1) {
+            printf("[!] Failed to receive incoming file\n");
             continue;
           }
 
@@ -258,8 +216,12 @@ main(int argc, char *argv[]) {
           }
 
           // Listen for incoming file
-          if (antenna_fread(filename_local) == -1) {
-            printf("[!] Failed to read incoming file\n");
+          int err;
+          IF_TIMEOUT((err = antenna_fread(FILE_LS_INDEX)),
+                     printf("[!] TIMEOUT OCCURED\n");
+                     continue);
+          if (err == -1) {
+            printf("[!] Failed to receive incoming file\n");
             continue;
           }
         } else if (strncmp(req, REQ_GET_LS, 2) == 0) {
@@ -282,8 +244,12 @@ main(int argc, char *argv[]) {
           }
 
           // Listen for incoming file
-          if (antenna_fread(FILE_LS_INDEX) == -1) {
-            printf("[!] Failed to read incoming file\n");
+          int err;
+          IF_TIMEOUT((err = antenna_fread(FILE_LS_INDEX)),
+                     printf("[!] TIMEOUT OCCURED\n");
+                     continue);
+          if (err == -1) {
+            printf("[!] Failed to receive incoming file\n");
             continue;
           }
 
@@ -431,11 +397,104 @@ main(int argc, char *argv[]) {
           }
 
           printf("[i] ACS enable request successfully sent!\n\n");
-
+        } else if (strncmp(req, "q", 1) == 0 || strncmp(req, "Q", 1) == 0) {
+          break;
         } else {
           printf("[!] {%c%c} is not a recognized request\n", req[0], req[1]);
-          break;
+          continue;
         }
+      }
+      continue;
+    } else if (choice == 'V' || choice == 'v') {
+      view_avail_requests();
+      continue;
+    } else if (choice == '?' || choice == 'h') {
+      display_help();
+      continue;
+    } else if (choice == 'Q' || choice == 'q') {
+      printf(
+          "\n"
+          "##################\n"
+          "#      Adios     #\n"
+          "##################\n");
+      exit(0);
+    } else {
+      printf("[!] The provided {%c} is not a valid option.\n", choice);
+      continue;
+    }
+
+    switch (choice) {
+      case 'r':
+        printf("[i] Reading UPTO %d bytes\n", MAX_READ_LEN);
+        if ((data_len = antenna_read(data, MAX_READ_LEN, READ_MODE_UPTO)) < 0) {
+          printf("[!] failed to antenna read UPTO %d bytes\n", MAX_READ_LEN);
+          return -1;
+        }
+        break;
+      case 'R':
+        printf("[?] Will this be encoded (y/n): ");
+        scanf(" %c", &encoded);
+        printf("[?] Read until (u) or UPTO (U): ");
+        scanf(" %c", &choice);
+        printf("[?] How many: ");
+        scanf("%d", &choice_len);
+        if (choice == 'u') {
+          if (encoded == 'y') {
+            printf("[i] Reading UNTIL %d bytes ENCODED...\n", choice_len);
+            if ((data_len =
+                     antenna_read_rs(data, choice_len, READ_MODE_UNTIL)) < 0) {
+              printf("[!] failed to antenna read until %d bytes\n", choice_len);
+              return -1;
+            }
+          } else {
+            printf("[i] Reading UNTIL %d bytes...\n", choice_len);
+            if ((data_len = antenna_read(data, choice_len, READ_MODE_UNTIL)) <
+                0) {
+              printf("[!] failed to antenna read until %d bytes\n", choice_len);
+              return -1;
+            }
+          }
+        } else {
+          if (encoded == 'y') {
+            printf("[i] Reading UPTO %d bytes ENCODED...\n", choice_len);
+            if ((data_len = antenna_read_rs(data, choice_len, READ_MODE_UPTO)) <
+                0) {
+              printf("[!] failed to antenna read upto %d bytes\n", choice_len);
+              return -1;
+            }
+          } else {
+            printf("[i] Reading UPTO %d bytes...\n", choice_len);
+            if ((data_len = antenna_read(data, choice_len, READ_MODE_UPTO)) <
+                0) {
+              printf("[!] failed to antenna read upto %d bytes\n", choice_len);
+              return -1;
+            }
+          }
+        }
+        break;
+      case 'w':
+        printf("[?] Enter message to send: ");
+        scanf(" %s", data);
+        data_len = strlen(data);
+        if (antenna_write(data, data_len) < 0) {
+          printf("[!] failed to antenna write \"%s\" containing %d bytes\n",
+                 data, data_len);
+          return -1;
+        }
+        break;
+      case 'W':
+        printf("[?] Enter message to ENCODE & send: ");
+        scanf(" %s", data);
+        data_len = strlen(data);
+        if (antenna_write_rs(data, data_len) < 0) {
+          printf("[!] failed to antenna write \"%s\" containing %d bytes\n",
+                 data, data_len);
+          return -1;
+        }
+        break;
+
+      // messy. move contents to a function.
+      case 'f':
 
         break;
       case 'F':
@@ -636,6 +695,17 @@ static int display_help() {
       "# -vided, the satellite will automatically cancel the op- #\n"
       "# -eration within 3 SECONDS. At this point, normal usage  #\n"
       "# may resume.                                             #\n"
+
+  );
+
+  view_avail_requests();
+
+  // done
+  return 0;
+}
+
+static int view_avail_requests() {
+  printf(
       "###########################################################\n"
       "#                     Basic requests                      #\n"
       "# ------------------------------------------------------- #\n"
@@ -667,10 +737,7 @@ static int display_help() {
       "# -> DECODE_FILE (remote):        'DF'                    #\n"
       "# -> MOVE_FILE:                   'MV'                    #\n"
       "# -> REMOVE_FILE:                 'RM'                    #\n"
-      "###########################################################\n"
+      "###########################################################\n");
 
-  );
-
-  // done
   return 0;
 }
