@@ -9,13 +9,29 @@
 #include <stdio.h>
 #include <string.h>
 
+// Settings
+#define ANTENNA_DEV_PATH "/dev/ttyUSB0"
+
 void *monitor_requests(void *data);
+
+static int display_help();
 
 main(int argc, char *argv[]) {
   // Check argc
-  if (argc != 2) {
-    printf("[!] Invalid number of arguments. Try ./antenna_test PATH\n");
+  if (argc > 2) {
+    printf("[!] Invalid number of arguments. Try ./antenna_test --help\n");
     return -1;
+  }
+
+  if (argc == 2) {
+    // Check help page
+    if (strcmp(argv[1], "--help") == 0 || strcmp(argv[1], "-h") == 0) {
+      display_help();
+      return 0;
+    } else {
+      printf("[!] Invalid argument. Try ./antenna_test --help\n");
+      return -1;
+    }
   }
 
   // Init
@@ -598,30 +614,63 @@ main(int argc, char *argv[]) {
   return 0;
 }
 
-// void *monitor_requests(void *data) {
-//   char req[2];
-// start:
-//   // Listen for incoming requests
-//   if (antenna_read(req, 2, READ_MODE_UNTIL) == -1) {
-//     printf("[!] Failed to read request from antenna\n");
-//     goto start;
-//   }
+static int display_help() {
+  printf(
+      "###########################################################\n"
+      "#                  LORIS GROUNDSTATION APP                #\n"
+      "#                          v1.0.0                         #\n"
+      "###########################################################\n"
+      "#                       Introduction                      #\n"
+      "# ------------------------------------------------------- #\n"
+      "# The LORIS satellite (circa 2022) is available for       #\n"
+      "# control via this application. ALL of its remote capa-   #\n"
+      "# -bilities may be exploited within this software.        #\n"
+      "###########################################################\n"
+      "#                       Basic usage                       #\n"
+      "# ------------------------------------------------------- #\n"
+      "# Communications are handled on a PER REQUEST basis with  #\n"
+      "# the satellite. Every request has an associated function #\n"
+      "# and (if required) set of expected arguments.            #\n"
+      "#                                                         #\n"
+      "# IF insufficient information or invalid requests are pro-#\n"
+      "# -vided, the satellite will automatically cancel the op- #\n"
+      "# -eration within 3 SECONDS. At this point, normal usage  #\n"
+      "# may resume.                                             #\n"
+      "###########################################################\n"
+      "#                     Basic requests                      #\n"
+      "# ------------------------------------------------------- #\n"
+      "# Basic requests are the sort which do not require any    #\n"
+      "# additional arguments.                                   #\n"
+      "# ------------------------------------------------------- #\n"
+      "# -> BASIC_TELEMETRY:             'A1'                    #\n"
+      "# -> LARGE_TELEMETRY:             'B2'                    #\n"
+      "# -> ENABLE_RAVEN:                'F6'                    #\n"
+      "# -> TAKE_PICTURE:                'TP'                    #\n"
+      "# -> SHUTDOWN:                    'SD'                    #\n"
+      "# -> REBOOT:                      'RB'                    #\n"
+      "# -> ENABLE_ACS:                  'AC'                    #\n"
+      "# -> FORCE BURNWIRE:              'BW'                    #\n"
+      "###########################################################\n"
+      "#                    Feature requests                     #\n"
+      "# ------------------------------------------------------- #\n"
+      "# Feature requests require some kind of user-defined input#\n"
+      "# to be carried out. These include requesting files, etc. #\n"
+      "#                                                         #\n"
+      "# *NOTE* ALL relative terms (upload/download) are FROM    #\n"
+      "# THE GROUNDSTATION's point-of-view.                      #\n"
+      "# ------------------------------------------------------- #\n"
+      "# -> RUN_COMMAND:                 'CC'                    #\n"
+      "# -> UPLOAD_FILE:                 'FF'                    #\n"
+      "# -> GET_FILE:                    'FR'                    #\n"
+      "# -> GET_LS:                      'LS'                    #\n"
+      "# -> ENCODE_FILE (remote):        'EF'                    #\n"
+      "# -> DECODE_FILE (remote):        'DF'                    #\n"
+      "# -> MOVE_FILE:                   'MV'                    #\n"
+      "# -> REMOVE_FILE:                 'RM'                    #\n"
+      "###########################################################\n"
 
-//   // Identify request
-//   if (strncmp(req, REQ_BASIC_TELEMETRY, 2) == 0) {
-//     // Send telemetry file
-//     printf("[i] Basic telemetry request received!\n");
-//     if (antenna_fwrite(FILE_BASIC_TELEMETRY) == -1) {
-//       printf("[!] Failed to send telemetry file to fulfill request\n");
-//       goto start;
-//     }
-//   } else if (strncmp(req, REQ_LARGE_TELEMETRY, 2) == 0) {
-//   } else if (strncmp(req, REQ_DELET_TELEMETRY, 2) == 0) {
-//   } else if (strncmp(req, REQ_REBOOT_OBC, 2) == 0) {
-//   } else if (strncmp(req, REQ_RESET_COMMS, 2) == 0) {
-//   } else if (strncmp(req, REQ_ENABLE_RAVEN, 2) == 0) {
-//   } else {
-//     printf("[:/] Could not process request [%c%c]\n", req[0], req[1]);
-//   }
-//   goto start;
-// }
+  );
+
+  // done
+  return 0;
+}
