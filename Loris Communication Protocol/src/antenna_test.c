@@ -130,7 +130,7 @@ main(int argc, char *argv[]) {
           }
 
           int err;
-          IF_TIMEOUT((err = antenna_fread(FILE_LS_INDEX)),
+          IF_TIMEOUT((err = antenna_fread(FILE_LARGE_TELEMETRY)),
                      printf("[!] TIMEOUT OCCURED\n");
                      continue);
           if (err == -1) {
@@ -217,7 +217,7 @@ main(int argc, char *argv[]) {
 
           // Listen for incoming file
           int err;
-          IF_TIMEOUT((err = antenna_fread(FILE_LS_INDEX)),
+          IF_TIMEOUT((err = antenna_fread(filename_local)),
                      printf("[!] TIMEOUT OCCURED\n");
                      continue);
           if (err == -1) {
